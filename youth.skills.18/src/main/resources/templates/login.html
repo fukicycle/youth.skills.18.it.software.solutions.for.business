@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/app.css">
+    <title>Login</title>
+</head>
+<body style="display: flex; align-items: center; justify-content: center;">
+<form method="post" action="/post/login" style="width: 400px;">
+    <h1 style="text-align: center;">ログイン</h1>
+    <div>
+        <div style="display: flex; align-items: center; padding: 1rem;">
+            <div style="min-width: 140px;">ユーザ名</div>
+            <input style="width: 100%; padding: 1rem;" type="text" name="username" th:value="${username}"/>
+        </div>
+        <div style="display: flex; align-items: center; padding: 1rem;">
+            <div style="min-width: 140px;">パスワード</div>
+            <input style="width: 100%; padding: 1rem;" type="password" name="password" th:value="${password}"/>
+        </div>
+        <input type="submit" class="btn" value="ログイン" style="margin: auto; width: 250px;">
+        <div th:text="${error}"></div>
+    </div>
+</form>
+</body>
+</html>
