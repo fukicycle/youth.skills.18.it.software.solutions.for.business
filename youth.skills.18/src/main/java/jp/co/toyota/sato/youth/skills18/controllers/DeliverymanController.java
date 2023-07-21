@@ -173,5 +173,10 @@ public class DeliverymanController {
         model.addAttribute("view", deliverymanPickupAndDeliveryView);
         return "deliveryman_delivery";
     }
+
+    @GetMapping("transport")
+    public String transport(){
+        return "deliveryman_transport";
+    }
 }
 
