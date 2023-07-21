@@ -8,7 +8,7 @@
 <body th:object="${view}" style="text-align: left;">
 <div style="max-width:900px; margin: auto;">
     <div style="display: flex; align-items: top;">
-        <h1>作業：集荷（<span th:text="*{truck}"></span>）</h1>
+        <h1>作業：配達（<span th:text="*{truck}"></span>）</h1>
         <div style="margin-left: auto;">
             <div id="time"></div>
         </div>
@@ -18,21 +18,21 @@
             <div>目的地詳細</div>
             <div style="display: grid; grid-template-columns: 35% 65%;">
                 <div>郵便番号</div>
-                <div th:text="*{delivery.senderZipcode}"></div>
+                <div th:text="*{delivery.destinationZipcode}"></div>
                 <div>住所</div>
-                <div th:text="*{delivery.senderAddress}"></div>
+                <div th:text="*{delivery.destinationAddress}"></div>
                 <div>名前</div>
-                <div th:text="*{delivery.senderName}"></div>
+                <div th:text="*{delivery.destinationName}"></div>
                 <div>名前(カナ)</div>
-                <div th:text="*{delivery.senderNameKana}"></div>
-                <div>集荷希望時刻</div>
-                <div th:text="*{#temporals.format(delivery.collectionDatetime,'HH:mm')}"></div>
+                <div th:text="*{delivery.destinationNameKana}"></div>
+                <div>配達希望時刻</div>
+                <div th:text="*{#temporals.format(delivery.deliveryDatetime,'HH:mm')}"></div>
                 <div>配送情報ID</div>
                 <div th:text="*{delivery.id}"></div>
                 <div>個数</div>
                 <div th:text="*{delivery.amount}"></div>
             </div>
-            <form method="post" action="/deliveryman/next/pickup">
+            <form method="post" action="/deliveryman/next/delivery">
                 <input type="hidden" th:value="*{delivery.id}" name="currentDeliveryId">
                 <input type="hidden" th:value="*{deliveryScheduleId}" name="deliveryScheduleId">
                 <input type="submit" style="margin: 10px 0; width: 80%;" class="btn" value="完了"/>

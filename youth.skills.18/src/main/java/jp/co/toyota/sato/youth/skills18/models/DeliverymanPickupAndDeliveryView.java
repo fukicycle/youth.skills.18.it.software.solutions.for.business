@@ -1,11 +1,10 @@
 package jp.co.toyota.sato.youth.skills18.models;
 
 import jp.co.toyota.sato.youth.skills18.entities.Delivery;
-import jp.co.toyota.sato.youth.skills18.entities.DeliveryScheduleDetail;
 
 import java.util.List;
 
-public class DeliverymanPickupView {
+public class DeliverymanPickupAndDeliveryView {
     private int deliveryScheduleId;
     private List<DeliverymanScheduleView> items;
     private String truck;
@@ -14,7 +13,7 @@ public class DeliverymanPickupView {
     private int total;
     private int finished;
 
-    public DeliverymanPickupView(int deliveryScheduleId, List<DeliverymanScheduleView> items, String truck, String type, Delivery delivery, int total, int finished) {
+    public DeliverymanPickupAndDeliveryView(int deliveryScheduleId, List<DeliverymanScheduleView> items, String truck, String type, Delivery delivery, int total, int finished) {
         this.deliveryScheduleId = deliveryScheduleId;
         this.items = items;
         this.truck = truck;
@@ -24,7 +23,7 @@ public class DeliverymanPickupView {
         this.finished = finished;
     }
 
-    public DeliverymanPickupView() {
+    public DeliverymanPickupAndDeliveryView() {
     }
 
     public int getDeliveryScheduleId() {
