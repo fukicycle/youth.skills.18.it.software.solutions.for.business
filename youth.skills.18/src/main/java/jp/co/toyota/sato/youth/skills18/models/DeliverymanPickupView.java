@@ -6,15 +6,17 @@ import jp.co.toyota.sato.youth.skills18.entities.DeliveryScheduleDetail;
 import java.util.List;
 
 public class DeliverymanPickupView {
-    private List<DeliveryScheduleDetail> deliveryScheduleDetails;
+    private int deliveryScheduleId;
+    private List<DeliverymanScheduleView> items;
     private String truck;
     private String type;
     private Delivery delivery;
     private int total;
     private int finished;
 
-    public DeliverymanPickupView(List<DeliveryScheduleDetail> deliveryScheduleDetails, String truck, String type, Delivery delivery, int total, int finished) {
-        this.deliveryScheduleDetails = deliveryScheduleDetails;
+    public DeliverymanPickupView(int deliveryScheduleId, List<DeliverymanScheduleView> items, String truck, String type, Delivery delivery, int total, int finished) {
+        this.deliveryScheduleId = deliveryScheduleId;
+        this.items = items;
         this.truck = truck;
         this.type = type;
         this.delivery = delivery;
@@ -25,12 +27,20 @@ public class DeliverymanPickupView {
     public DeliverymanPickupView() {
     }
 
-    public List<DeliveryScheduleDetail> getDeliveryScheduleDetails() {
-        return deliveryScheduleDetails;
+    public int getDeliveryScheduleId() {
+        return deliveryScheduleId;
     }
 
-    public void setDeliveryScheduleDetails(List<DeliveryScheduleDetail> deliveryScheduleDetails) {
-        this.deliveryScheduleDetails = deliveryScheduleDetails;
+    public void setDeliveryScheduleId(int deliveryScheduleId) {
+        this.deliveryScheduleId = deliveryScheduleId;
+    }
+
+    public List<DeliverymanScheduleView> getItems() {
+        return items;
+    }
+
+    public void setItems(List<DeliverymanScheduleView> items) {
+        this.items = items;
     }
 
     public String getTruck() {

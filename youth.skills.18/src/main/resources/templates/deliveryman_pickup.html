@@ -25,16 +25,38 @@
                 <div th:text="*{delivery.senderName}"></div>
                 <div>名前(カナ)</div>
                 <div th:text="*{delivery.senderNameKana}"></div>
-                <div>到着予定時刻</div>
+                <div>集荷希望時刻</div>
                 <div th:text="*{#temporals.format(delivery.collectionDatetime,'HH:mm')}"></div>
                 <div>配送情報ID</div>
                 <div th:text="*{delivery.id}"></div>
                 <div>個数</div>
                 <div th:text="*{delivery.amount}"></div>
             </div>
+            <form method="post" action="/deliveryman/next/pickup">
+                <input type="hidden" th:value="*{delivery.id}" name="currentDeliveryId">
+                <input type="hidden" th:value="*{deliveryScheduleId}" name="deliveryScheduleId">
+                <input type="submit" class="btn" value="完了"/>
+            </form>
         </div>
         <div>
-
+            <div>順番</div>
+            <div style="text-align: right;">完了件数：<span th:text="*{finished}"></span>/<span th:text="*{total}"></span></div>
+            <table border="1">
+                <thead>
+                <tr>
+                    <th>順番</th>
+                    <th>住所</th>
+                    <th>到着予定時刻</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : *{items}">
+                    <td th:text="${item.order}"></td>
+                    <td th:text="${item.address}"></td>
+                    <td th:text="${#temporals.format(item.estimatedTime,'HH:mm')}"></td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
     <div>
@@ -56,6 +78,9 @@
 	function format(value, character) {
 		return value.toString().padStart(2, '0') + character;
 	}
+
+
+
 
 
 

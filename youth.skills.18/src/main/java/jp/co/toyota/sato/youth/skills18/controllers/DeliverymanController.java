@@ -3,6 +3,7 @@ package jp.co.toyota.sato.youth.skills18.controllers;
 import jp.co.toyota.sato.youth.skills18.entities.*;
 import jp.co.toyota.sato.youth.skills18.models.DeliverymanMenuView;
 import jp.co.toyota.sato.youth.skills18.models.DeliverymanPickupView;
+import jp.co.toyota.sato.youth.skills18.models.DeliverymanScheduleView;
 import jp.co.toyota.sato.youth.skills18.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -35,6 +37,8 @@ public class DeliverymanController {
     private DeliveryStatusTypeRepository deliveryStatusTypeRepository;
     @Autowired
     private DeliveryRepository deliveryRepository;
+    @Autowired
+    private DeliveryStatusRepository deliveryStatusRepository;
 
     @GetMapping("menu")
     public String getMenu(Model model, int id) {
@@ -77,26 +81,48 @@ public class DeliverymanController {
 
     @PostMapping("next/pickup")
     public String nextPickup(Model model, String currentDeliveryId, int deliveryScheduleId) {
-        return "deliveryman_pickup";
+        DeliveryScheduleDetail deliveryScheduleDetail = deliveryScheduleDetailRepository.findByDeliveryIdAndDeliveryScheduleId(currentDeliveryId, deliveryScheduleId).orElseThrow();
+        deliveryScheduleDetail.setActualTime(LocalTime.now());
+        deliveryScheduleDetailRepository.save(deliveryScheduleDetail);
+        DeliveryStatus deliveryStatus = new DeliveryStatus(0, currentDeliveryId, LocalDateTime.now(), 2, null);
+        deliveryStatusRepository.save(deliveryStatus);
+        System.out.println("Done!:" + currentDeliveryId);
+        return pickup(model, deliveryScheduleId);
     }
 
     @GetMapping("pickup")
     public String pickup(Model model, int deliveryScheduleId) {
         DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElse(new DeliverySchedule());
+        if (deliverySchedule.getActualStartTime() == null && deliverySchedule.getActualDate() == null) {
+            deliverySchedule.setActualStartTime(LocalTime.now());
+            deliverySchedule.setActualDate(LocalDate.now());
+            deliveryScheduleRepository.save(deliverySchedule);
+        }
         List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleIdAndActualTimeIsNull(deliveryScheduleId);
         DeliverymanPickupView deliverymanPickupView = new DeliverymanPickupView();
         if (deliveryScheduleDetails.size() == 0) {
             //finish process
+            deliverySchedule.setActualEndTime(LocalTime.now());
+            deliveryScheduleRepository.save(deliverySchedule);
             return "redirect:/deliveryman/menu?id=" + deliverySchedule.getEmployeeId();
         }
         Delivery delivery = deliveryRepository.findById(deliveryScheduleDetails.get(0).getDeliveryId()).orElse(new Delivery());
+        List<DeliverymanScheduleView> items = new ArrayList<>();
+        for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
+            Delivery delivery1 = deliveryRepository.findById(deliveryScheduleDetail.getDeliveryId()).orElse(new Delivery());
+            items.add(new DeliverymanScheduleView(deliveryScheduleDetail.getId(), delivery1.getSenderAddress(), deliveryScheduleDetail.getDeliveryOrder(), deliveryScheduleDetail.getEstimatedTime()));
+        }
+        items.sort(Comparator.comparing(DeliverymanScheduleView::getEstimatedTime));
         //set value
-        deliverymanPickupView.setDeliveryScheduleDetails(deliveryScheduleDetails);
+
+        deliverymanPickupView.setDeliveryScheduleId(deliveryScheduleId);
+        deliverymanPickupView.setItems(items);
         deliverymanPickupView.setTruck(truckRepository.findById(deliverySchedule.getTruckId()).orElse(new Truck()).getName());
         deliverymanPickupView.setType(deliveryTypeRepository.findById(deliverySchedule.getDeliveryTypeId()).orElse(new DeliveryType()).getName());
         deliverymanPickupView.setDelivery(delivery);
-        deliverymanPickupView.setTotal(deliveryScheduleDetailRepository.countByDeliveryScheduleId(deliveryScheduleId));
-        deliverymanPickupView.setFinished(deliveryScheduleDetails.size());
+        int total = deliveryScheduleDetailRepository.countByDeliveryScheduleId(deliveryScheduleId);
+        deliverymanPickupView.setTotal(total);
+        deliverymanPickupView.setFinished(total - deliveryScheduleDetails.size());
         model.addAttribute("view", deliverymanPickupView);
         return "deliveryman_pickup";
     }

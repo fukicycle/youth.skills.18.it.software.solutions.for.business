@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <title>Error</title>
+</head>
+<body>
+<!-- エラー内容を表示 -->
+<h1 th:text="${status} + ' ' + ${error}"></h1>
+<p>以下の内容のエラーが発生しました。</p>
+<p style="font-weight:bold; color:red;" th:text="${message}"></p>
+<p>ブラウザを終了し再度アクセスしなおしてください。このエラーが続く場合は管理者に連絡してください。</p>
+</body>
+</html>
