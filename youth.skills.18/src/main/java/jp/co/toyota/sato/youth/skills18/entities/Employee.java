@@ -16,7 +16,7 @@ public class Employee {
     @Column(name = "phone")
     private String phone;
     @Column(name = "office_id")
-    private String officeId;
+    private int officeId;
     @Column(name = "username")
     private String username;
     @Column(name = "password")
@@ -24,7 +24,7 @@ public class Employee {
     @Column(name = "is_admin")
     private boolean isAdmin;
 
-    public Employee(int id, String name, String nameKana, String phone, String officeId, String username, String password, boolean isAdmin) {
+    public Employee(int id, String name, String nameKana, String phone, int officeId, String username, String password, boolean isAdmin) {
         this.id = id;
         this.name = name;
         this.nameKana = nameKana;
@@ -71,11 +71,11 @@ public class Employee {
         this.phone = phone;
     }
 
-    public String getOfficeId() {
+    public int getOfficeId() {
         return officeId;
     }
 
-    public void setOfficeId(String officeId) {
+    public void setOfficeId(int officeId) {
         this.officeId = officeId;
     }
 

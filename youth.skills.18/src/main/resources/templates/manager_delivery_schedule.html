@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org/">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/app.css">
+    <title>Title</title>
+</head>
+<body>
+<div style="max-width:900px; margin: auto;">
+    <div style="display: flex; align-items: top;">
+        <h1>配送スケジュール（<span>営業所A</span>）</h1>
+        <div style="margin-left: auto;">
+            <div id="time"></div>
+            <div style="display: flex;">
+                <div>
+                    <a class="btn" href="/login" style="margin-top: 10px;">ログアウト</a>
+                </div>
+                <div>
+                    <a class="btn" style="margin-left: 10px;" href="/manager/menu">メニューへ戻る</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div>
+    </div>
+</div>
+<script>
+	getDatetime();
+	setInterval(getDatetime, 1000);
+	function getDatetime() {
+		const datetimeDiv = document.getElementById('time');
+		const currentDate = new Date();
+		const datetime = format(currentDate.getMonth() + 1, '/')
+			+ format(currentDate.getDate(), ' ')
+			+ format(currentDate.getHours(), ':')
+			+ format(currentDate.getMinutes(), ':')
+			+ format(currentDate.getSeconds(), '');
+		datetimeDiv.innerText = datetime;
+	}
+	function format(value, character) {
+		return value.toString().padStart(2, '0') + character;
+	}
+</script>
+</body>
+</html>

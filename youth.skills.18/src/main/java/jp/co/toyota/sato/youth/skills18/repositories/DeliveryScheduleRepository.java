@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface DeliveryScheduleRepository extends ListCrudRepository<DeliverySchedule, Integer> {
     List<DeliverySchedule> findAllByEmployeeIdAndEstimatedDateAndActualDateIsNull(int employeeId, LocalDate estimatedDate);
+    List<DeliverySchedule> findAllByEmployeeIdAndEstimatedDate(int employeeId,LocalDate estimatedDate);
 }
