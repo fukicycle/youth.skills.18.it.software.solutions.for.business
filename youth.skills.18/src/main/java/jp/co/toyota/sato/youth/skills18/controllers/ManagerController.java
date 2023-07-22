@@ -1,5 +1,6 @@
 package jp.co.toyota.sato.youth.skills18.controllers;
 
+import jp.co.toyota.sato.youth.skills18.TwoOpt;
 import jp.co.toyota.sato.youth.skills18.entities.*;
 import jp.co.toyota.sato.youth.skills18.models.*;
 import jp.co.toyota.sato.youth.skills18.repositories.*;
@@ -11,9 +12,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.awt.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -30,6 +33,10 @@ public class ManagerController {
     private OfficeRepository officeRepository;
     @Autowired
     private DeliveryScheduleDetailRepository deliveryScheduleDetailRepository;
+    @Autowired
+    private DeliveryRepository deliveryRepository;
+    @Autowired
+    private ZipcodeRepository zipcodeRepository;
 
     @GetMapping("menu")
     public String getMenu(Model model, int id) {
@@ -103,7 +110,6 @@ public class ManagerController {
         Employee employee = employeeRepository.findById(id).orElseThrow();
         Office office = officeRepository.findById(employee.getOfficeId()).orElseThrow();
         List<Employee> employees = employeeRepository.findAllByOfficeIdAndIsAdminIsFalse(employee.getOfficeId());
-        List<DeliveryType> deliveryTypes = deliveryTypeRepository.findAll();
         List<ManagerDeliveryScheduleTableView> managerDeliveryScheduleTableViews = new ArrayList<>();
         for (Employee employee1 : employees) {
             for (DeliverySchedule deliverySchedule : deliveryScheduleRepository.findAllByEmployeeIdAndEstimatedDate(employee1.getId(), date)) {
@@ -122,4 +128,62 @@ public class ManagerController {
         return "manager_delivery_schedule";
     }
 
+    @GetMapping("delivery/schedule/plan")
+    public String deliverySchedulePlan(Model model, int id, @RequestParam(defaultValue = "True") boolean isCost) throws Exception {
+        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(id).orElseThrow();
+        Employee employee = employeeRepository.findById(deliverySchedule.getEmployeeId()).orElseThrow();
+        Office office = officeRepository.findById(employee.getOfficeId()).orElseThrow();
+        List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleId(id);
+        if (deliveryScheduleDetails.size() == 0) throw new Exception("配送スケジュール詳細が存在しません。");
+        List<PointWrapper> points = new ArrayList<>();
+        PointWrapper startAndEndPoint = new PointWrapper(new Point(office.getxLocation(), office.getyLocation()), null);
+        for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
+            Delivery delivery = deliveryRepository.findById(deliveryScheduleDetail.getDeliveryId()).orElseThrow();
+            Zipcode zipcode;
+            if (deliverySchedule.getDeliveryTypeId() == 1) {
+                zipcode = zipcodeRepository.findById(delivery.getSenderZipcode()).orElseThrow();
+            } else {
+                zipcode = zipcodeRepository.findById(delivery.getDestinationZipcode()).orElseThrow();
+            }
+            int x = zipcode.getxLocation();
+            int y = zipcode.getyLocation();
+            points.add(new PointWrapper(new Point(x, y), delivery));
+        }
+        if (!isCost) {
+            if (deliverySchedule.getDeliveryTypeId() == 1) {
+                points.sort(Comparator.comparing(a -> a.getDelivery().getCollectionDatetime()));
+            } else {
+                points.sort(Comparator.comparing(a -> a.getDelivery().getDeliveryDatetime()));
+            }
+        }
+        points.add(0, startAndEndPoint);
+        points.add(startAndEndPoint);
+        List<PointWrapper> bestRoute = isCost ? TwoOpt.getCalculatedRoute(points) : points;
+
+        int seq = 0;
+        List<ManagerPlanTableAndMapView> mapItems = new ArrayList<>();
+        List<ManagerPlanTableAndMapView> tableItems = new ArrayList<>();
+        PointWrapper prevPoint = bestRoute.get(bestRoute.size() - 1);
+        for (PointWrapper point : bestRoute) {
+            if (point.getDelivery() == null) {
+                mapItems.add(new ManagerPlanTableAndMapView(seq++,"",null,null,point.getPoint().getX(),point.getPoint().getY(),prevPoint.getPoint().getX(),prevPoint.getPoint().getY(),office.getName()));
+            } else {
+
+            }
+        }
+
+        //set view
+        ManagerDeliverySchedulePlanView view = new ManagerDeliverySchedulePlanView();
+        view.setOffice(office.getName());
+        view.setStartTime(deliverySchedule.getActualStartTime());
+        view.setCost(getCost(points));
+        model.addAttribute("view", view);
+
+        return "manager_delivery_schedule_plan";
+    }
+
+    private long getCost(List<PointWrapper> points) {
+        double dist = TwoOpt.getRouteLength(points);
+        return Math.round(dist / 60 * 360);
+    }
 }
