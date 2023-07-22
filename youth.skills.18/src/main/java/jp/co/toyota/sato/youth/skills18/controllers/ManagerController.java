@@ -1,9 +1,7 @@
 package jp.co.toyota.sato.youth.skills18.controllers;
 
 import jp.co.toyota.sato.youth.skills18.entities.*;
-import jp.co.toyota.sato.youth.skills18.models.DeliveryTypeWrapper;
-import jp.co.toyota.sato.youth.skills18.models.ManagerDeliverymanScheduleTableView;
-import jp.co.toyota.sato.youth.skills18.models.ManagerDeliverymanScheduleView;
+import jp.co.toyota.sato.youth.skills18.models.*;
 import jp.co.toyota.sato.youth.skills18.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +28,8 @@ public class ManagerController {
     private DeliveryTypeRepository deliveryTypeRepository;
     @Autowired
     private OfficeRepository officeRepository;
+    @Autowired
+    private DeliveryScheduleDetailRepository deliveryScheduleDetailRepository;
 
     @GetMapping("menu")
     public String getMenu(Model model, int id) {
@@ -39,7 +38,7 @@ public class ManagerController {
     }
 
     @PostMapping("deliveryman/schedule/view")
-    public String changeDate(Model model, int id, LocalDate date) {
+    public String deliverymanScheduleView(Model model, int id, LocalDate date) {
         return deliverymanSchedule(model, id, date);
     }
 
@@ -48,7 +47,6 @@ public class ManagerController {
         if (date == null) {
             date = LocalDate.now();
         }
-        System.out.println(date);
         Employee employee = employeeRepository.findById(id).orElseThrow();
         Office office = officeRepository.findById(employee.getOfficeId()).orElseThrow();
         List<Employee> employees = employeeRepository.findAllByOfficeIdAndIsAdminIsFalse(employee.getOfficeId());
@@ -92,8 +90,36 @@ public class ManagerController {
         return "manager_deliveryman_schedule";
     }
 
+    @PostMapping("delivery/schedule/view")
+    public String deliveryScheduleView(Model model, int id, LocalDate date) {
+        return deliverySchedule(model, id, date);
+    }
+
     @GetMapping("delivery/schedule")
-    public String deliverySchedule(Model model) {
+    public String deliverySchedule(Model model, int id, LocalDate date) {
+        if (date == null) {
+            date = LocalDate.now();
+        }
+        Employee employee = employeeRepository.findById(id).orElseThrow();
+        Office office = officeRepository.findById(employee.getOfficeId()).orElseThrow();
+        List<Employee> employees = employeeRepository.findAllByOfficeIdAndIsAdminIsFalse(employee.getOfficeId());
+        List<DeliveryType> deliveryTypes = deliveryTypeRepository.findAll();
+        List<ManagerDeliveryScheduleTableView> managerDeliveryScheduleTableViews = new ArrayList<>();
+        for (Employee employee1 : employees) {
+            for (DeliverySchedule deliverySchedule : deliveryScheduleRepository.findAllByEmployeeIdAndEstimatedDate(employee1.getId(), date)) {
+                String type = deliveryTypeRepository.findById(deliverySchedule.getDeliveryTypeId()).orElseThrow().getName();
+                long count = deliveryScheduleDetailRepository.findAllByDeliveryScheduleId(deliverySchedule.getId()).stream().filter(a -> a.getDeliveryOrder() == 0).count();
+                managerDeliveryScheduleTableViews.add(new ManagerDeliveryScheduleTableView(deliverySchedule.getEstimatedStartTime(), type, count == 0 ? "#8f8" : "f88", deliverySchedule.getId()));
+            }
+        }
+        //set view
+        ManagerDeliveryScheduleView view = new ManagerDeliveryScheduleView();
+        view.setOffice(office.getName());
+        view.setDate(date);
+        view.setId(id);
+        view.setTableViews(managerDeliveryScheduleTableViews);
+        model.addAttribute("view", view);
         return "manager_delivery_schedule";
     }
+
 }

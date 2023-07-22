@@ -5,23 +5,56 @@
     <link rel="stylesheet" href="/app.css">
     <title>Title</title>
 </head>
-<body>
+<body th:object="${view}">
 <div style="max-width:900px; margin: auto;">
     <div style="display: flex; align-items: top;">
-        <h1>配送スケジュール（<span>営業所A</span>）</h1>
+        <h1>配送スケジュール（<span th:text="*{office}">営業所A</span>）</h1>
         <div style="margin-left: auto;">
             <div id="time"></div>
             <div style="display: flex;">
                 <div>
-                    <a class="btn" href="/login" style="margin-top: 10px;">ログアウト</a>
+                    <a class="btn" href="/login">ログアウト</a>
                 </div>
                 <div>
-                    <a class="btn" style="margin-left: 10px;" href="/manager/menu">メニューへ戻る</a>
+                    <a class="btn" style="margin-left: 10px;" th:href="|/manager/menu?id=*{id}|">メニューへ戻る</a>
                 </div>
             </div>
         </div>
     </div>
     <div>
+        <div>
+            <form method="post" action="/manager/delivery/schedule/view" style="display: flex; align-items: center;">
+                <div>日付</div>
+                <input type="hidden" name="id" th:value="*{id}">
+                <input type="date" name="date" th:value="*{date}" style="padding: 1rem; margin-left: 10px;">
+                <input type="submit" class="btn" style="margin-left: 10px; width: 200px;" value="表示">
+            </form>
+            <div style="max-height: 75vh; width: 100%; display: grid; grid-template-columns: 75% 5% 20%; margin-top: 10px;">
+                <table style="border-collapse: collapse;" border="1">
+                    <thead>
+                    <tr>
+                        <th>時刻</th>
+                        <th>配送タイプ</th>
+                        <th>アクション</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="tableView : *{tableViews}" th:style="|background-color: ${tableView.color};|">
+                        <td th:text="${#temporals.format(tableView.time,'HH:mm')}"></td>
+                        <td th:text="${tableView.type}"></td>
+                        <td>
+                            <a th:href="|/manager/delivery/schedule/plan?id=${tableView.deliveryScheduleId}|">順路計画</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div></div>
+                <div>
+                    <div style="background-color: #8f8;">計画済み</div>
+                    <div style="background-color: #f88; margin-top: 10px;">未計画</div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <script>
@@ -40,6 +73,7 @@
 	function format(value, character) {
 		return value.toString().padStart(2, '0') + character;
 	}
+
 </script>
 </body>
 </html>

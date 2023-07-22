@@ -12,4 +12,5 @@ public interface DeliveryScheduleDetailRepository extends ListCrudRepository<Del
     int countByDeliveryScheduleId(int deliveryScheduleId);
 
     Optional<DeliveryScheduleDetail> findByDeliveryIdAndDeliveryScheduleId(String deliveryId, int deliveryScheduleId);
+    List<DeliveryScheduleDetail> findAllByDeliveryScheduleId(int deliveryScheduleId);
 }
