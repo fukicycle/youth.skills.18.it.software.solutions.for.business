@@ -97,7 +97,7 @@ public class DeliverymanController {
 
     @GetMapping("pickup")
     public String pickup(Model model, int deliveryScheduleId) {
-        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElse(new DeliverySchedule());
+        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElseThrow();
         if (deliverySchedule.getActualStartTime() == null && deliverySchedule.getActualDate() == null) {
             deliverySchedule.setActualStartTime(LocalTime.now());
             deliverySchedule.setActualDate(LocalDate.now());
@@ -112,17 +112,17 @@ public class DeliverymanController {
             deliveryScheduleRepository.save(deliverySchedule);
             return "redirect:/deliveryman/menu?id=" + deliverySchedule.getEmployeeId();
         }
-        Delivery delivery = deliveryRepository.findById(deliveryScheduleDetails.get(0).getDeliveryId()).orElse(new Delivery());
+        Delivery delivery = deliveryRepository.findById(deliveryScheduleDetails.get(0).getDeliveryId()).orElseThrow();
         List<DeliverymanScheduleView> items = new ArrayList<>();
         for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
-            Delivery delivery1 = deliveryRepository.findById(deliveryScheduleDetail.getDeliveryId()).orElse(new Delivery());
+            Delivery delivery1 = deliveryRepository.findById(deliveryScheduleDetail.getDeliveryId()).orElseThrow();
             items.add(new DeliverymanScheduleView(deliveryScheduleDetail.getId(), delivery1.getSenderAddress(), deliveryScheduleDetail.getDeliveryOrder(), deliveryScheduleDetail.getEstimatedTime()));
         }
         //set value
         deliverymanPickupAndDeliveryView.setDeliveryScheduleId(deliveryScheduleId);
         deliverymanPickupAndDeliveryView.setItems(items);
-        deliverymanPickupAndDeliveryView.setTruck(truckRepository.findById(deliverySchedule.getTruckId()).orElse(new Truck()).getName());
-        deliverymanPickupAndDeliveryView.setType(deliveryTypeRepository.findById(deliverySchedule.getDeliveryTypeId()).orElse(new DeliveryType()).getName());
+        deliverymanPickupAndDeliveryView.setTruck(truckRepository.findById(deliverySchedule.getTruckId()).orElseThrow().getName());
+        deliverymanPickupAndDeliveryView.setType(deliveryTypeRepository.findById(deliverySchedule.getDeliveryTypeId()).orElseThrow().getName());
         deliverymanPickupAndDeliveryView.setDelivery(delivery);
         int total = deliveryScheduleDetailRepository.countByDeliveryScheduleId(deliveryScheduleId);
         deliverymanPickupAndDeliveryView.setTotal(total);
@@ -145,7 +145,7 @@ public class DeliverymanController {
 
     @GetMapping("delivery")
     public String delivery(Model model, int deliveryScheduleId) {
-        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElse(new DeliverySchedule());
+        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElseThrow();
         //start work
         if (deliverySchedule.getActualStartTime() == null && deliverySchedule.getActualDate() == null) {
             deliverySchedule.setActualStartTime(LocalTime.now());
@@ -161,17 +161,17 @@ public class DeliverymanController {
             deliveryScheduleRepository.save(deliverySchedule);
             return "redirect:/deliveryman/menu?id=" + deliverySchedule.getEmployeeId();
         }
-        Delivery delivery = deliveryRepository.findById(deliveryScheduleDetails.get(0).getDeliveryId()).orElse(new Delivery());
+        Delivery delivery = deliveryRepository.findById(deliveryScheduleDetails.get(0).getDeliveryId()).orElseThrow();
         List<DeliverymanScheduleView> items = new ArrayList<>();
         for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
-            Delivery delivery1 = deliveryRepository.findById(deliveryScheduleDetail.getDeliveryId()).orElse(new Delivery());
+            Delivery delivery1 = deliveryRepository.findById(deliveryScheduleDetail.getDeliveryId()).orElseThrow();
             items.add(new DeliverymanScheduleView(deliveryScheduleDetail.getId(), delivery1.getDestinationAddress(), deliveryScheduleDetail.getDeliveryOrder(), deliveryScheduleDetail.getEstimatedTime()));
         }
         //set value
         deliverymanPickupAndDeliveryView.setDeliveryScheduleId(deliveryScheduleId);
         deliverymanPickupAndDeliveryView.setItems(items);
-        deliverymanPickupAndDeliveryView.setTruck(truckRepository.findById(deliverySchedule.getTruckId()).orElse(new Truck()).getName());
-        deliverymanPickupAndDeliveryView.setType(deliveryTypeRepository.findById(deliverySchedule.getDeliveryTypeId()).orElse(new DeliveryType()).getName());
+        deliverymanPickupAndDeliveryView.setTruck(truckRepository.findById(deliverySchedule.getTruckId()).orElseThrow().getName());
+        deliverymanPickupAndDeliveryView.setType(deliveryTypeRepository.findById(deliverySchedule.getDeliveryTypeId()).orElseThrow().getName());
         deliverymanPickupAndDeliveryView.setDelivery(delivery);
         int total = deliveryScheduleDetailRepository.countByDeliveryScheduleId(deliveryScheduleId);
         deliverymanPickupAndDeliveryView.setTotal(total);
@@ -223,6 +223,96 @@ public class DeliverymanController {
         deliverymanOtherView.setTruck(truck.getName());
         model.addAttribute("view", deliverymanOtherView);
         return "deliveryman_transport";
+    }
+
+    @PostMapping("done/collect")
+    public String doneCollect(Model model, int deliveryScheduleId) {
+        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElseThrow();
+        deliverySchedule.setActualEndTime(LocalTime.now());
+        deliveryScheduleRepository.save(deliverySchedule);
+        OfficeDelivery officeDelivery = officeDeliveryRepository.findById(deliverySchedule.getOfficeDeliveryId()).orElseThrow();
+        List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleIdAndActualTimeIsNull(deliveryScheduleId);
+        for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
+            deliveryScheduleDetail.setActualTime(LocalTime.now());
+            DeliveryStatus deliveryStatus = new DeliveryStatus(0, deliveryScheduleDetail.getDeliveryId(), LocalDateTime.now(), 5, officeDelivery.getDestinationOfficeId());
+            deliveryStatusRepository.save(deliveryStatus);
+        }
+        deliveryScheduleDetailRepository.saveAll(deliveryScheduleDetails);
+        return "redirect:/deliveryman/menu?id=" + deliverySchedule.getEmployeeId();
+    }
+
+    @GetMapping("collect")
+    public String collect(Model model, int deliveryScheduleId) {
+        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElseThrow();
+        //start work
+        if (deliverySchedule.getActualStartTime() == null && deliverySchedule.getActualDate() == null) {
+            deliverySchedule.setActualStartTime(LocalTime.now());
+            deliverySchedule.setActualDate(LocalDate.now());
+            deliveryScheduleRepository.save(deliverySchedule);
+            OfficeDelivery officeDelivery = officeDeliveryRepository.findById(deliverySchedule.getOfficeDeliveryId()).orElseThrow();
+            List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleIdAndActualTimeIsNull(deliveryScheduleId);
+            for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
+                DeliveryStatus deliveryStatus = new DeliveryStatus(0, deliveryScheduleDetail.getDeliveryId(), LocalDateTime.now(), 4, officeDelivery.getSenderOfficeId());
+                deliveryStatusRepository.save(deliveryStatus);
+            }
+        }
+        OfficeDelivery officeDelivery = officeDeliveryRepository.findById(deliverySchedule.getOfficeDeliveryId()).orElseThrow();
+        Office office = officeRepository.findById(officeDelivery.getDestinationOfficeId()).orElseThrow();
+        Truck truck = truckRepository.findById(deliverySchedule.getTruckId()).orElseThrow();
+        DeliverymanOtherView deliverymanOtherView = new DeliverymanOtherView();
+        deliverymanOtherView.setDeliveryScheduleId(deliveryScheduleId);
+        deliverymanOtherView.setAddress("");
+        deliverymanOtherView.setZipcode(office.getZipcode());
+        deliverymanOtherView.setName(office.getName());
+        deliverymanOtherView.setEstimatedTime(deliverySchedule.getEstimatedStartTime().plusMinutes(officeDelivery.getDeliveryTime()));
+        deliverymanOtherView.setTruck(truck.getName());
+        model.addAttribute("view", deliverymanOtherView);
+        return "deliveryman_collect";
+    }
+
+    @PostMapping("done/regular")
+    public String doneRegular(Model model, int deliveryScheduleId) {
+        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElseThrow();
+        deliverySchedule.setActualEndTime(LocalTime.now());
+        deliveryScheduleRepository.save(deliverySchedule);
+        OfficeDelivery officeDelivery = officeDeliveryRepository.findById(deliverySchedule.getOfficeDeliveryId()).orElseThrow();
+        List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleIdAndActualTimeIsNull(deliveryScheduleId);
+        for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
+            deliveryScheduleDetail.setActualTime(LocalTime.now());
+            DeliveryStatus deliveryStatus = new DeliveryStatus(0, deliveryScheduleDetail.getDeliveryId(), LocalDateTime.now(), 5, officeDelivery.getDestinationOfficeId());
+            deliveryStatusRepository.save(deliveryStatus);
+        }
+        deliveryScheduleDetailRepository.saveAll(deliveryScheduleDetails);
+        return "redirect:/deliveryman/menu?id=" + deliverySchedule.getEmployeeId();
+    }
+
+    @GetMapping("regular")
+    public String regular(Model model, int deliveryScheduleId) {
+        DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(deliveryScheduleId).orElseThrow();
+        //start work
+        if (deliverySchedule.getActualStartTime() == null && deliverySchedule.getActualDate() == null) {
+            deliverySchedule.setActualStartTime(LocalTime.now());
+            deliverySchedule.setActualDate(LocalDate.now());
+            deliveryScheduleRepository.save(deliverySchedule);
+            OfficeDelivery officeDelivery = officeDeliveryRepository.findById(deliverySchedule.getOfficeDeliveryId()).orElseThrow();
+            List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleIdAndActualTimeIsNull(deliveryScheduleId);
+            for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
+                DeliveryStatus deliveryStatus = new DeliveryStatus(0, deliveryScheduleDetail.getDeliveryId(), LocalDateTime.now(), 4, officeDelivery.getSenderOfficeId());
+                deliveryStatusRepository.save(deliveryStatus);
+            }
+        }
+        OfficeDelivery officeDelivery = officeDeliveryRepository.findById(deliverySchedule.getOfficeDeliveryId()).orElseThrow();
+        Office office = officeRepository.findById(officeDelivery.getDestinationOfficeId()).orElseThrow();
+        Truck truck = truckRepository.findById(deliverySchedule.getTruckId()).orElseThrow();
+        DeliverymanOtherView deliverymanOtherView = new DeliverymanOtherView();
+        deliverymanOtherView.setDeliveryScheduleId(deliveryScheduleId);
+        deliverymanOtherView.setAddress("");
+        deliverymanOtherView.setZipcode(office.getZipcode());
+        deliverymanOtherView.setName(office.getName());
+        deliverymanOtherView.setEstimatedTime(deliverySchedule.getEstimatedStartTime().plusMinutes(officeDelivery.getDeliveryTime()));
+        deliverymanOtherView.setTruck(truck.getName());
+        model.addAttribute("view", deliverymanOtherView);
+        return "deliveryman_regular";
     }
 }
 
