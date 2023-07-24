@@ -1,23 +1,26 @@
 package jp.co.toyota.sato.youth.skills18.models;
 
+import jp.co.toyota.sato.youth.skills18.entities.Office;
+
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 public class ManagerPlanTableAndMapView {
-    public int sequence;
-    public String address;
-    public LocalTime estimatedTime;
-    public LocalTime desiredTime;
-    public double x;
-    public double y;
-    public double prevX;
-    public double prevY;
-    public String office;
+    private int sequence;
+    private String address;
+    private LocalTime estimatedTime;
+    private LocalDateTime desiredDatetime;
+    private double x;
+    private double y;
+    private double prevX;
+    private double prevY;
+    private Office office;
 
-    public ManagerPlanTableAndMapView(int sequence, String address, LocalTime estimatedTime, LocalTime desiredTime, double x, double y, double prevX, double prevY, String office) {
+    public ManagerPlanTableAndMapView(int sequence, String address, LocalTime estimatedTime, LocalDateTime desiredDatetime, double x, double y, double prevX, double prevY, Office office) {
         this.sequence = sequence;
         this.address = address;
         this.estimatedTime = estimatedTime;
-        this.desiredTime = desiredTime;
+        this.desiredDatetime = desiredDatetime;
         this.x = x;
         this.y = y;
         this.prevX = prevX;
@@ -52,12 +55,12 @@ public class ManagerPlanTableAndMapView {
         this.estimatedTime = estimatedTime;
     }
 
-    public LocalTime getDesiredTime() {
-        return desiredTime;
+    public LocalDateTime getDesiredDatetime() {
+        return desiredDatetime;
     }
 
-    public void setDesiredTime(LocalTime desiredTime) {
-        this.desiredTime = desiredTime;
+    public void setDesiredDatetime(LocalDateTime desiredDatetime) {
+        this.desiredDatetime = desiredDatetime;
     }
 
     public double getX() {
@@ -92,11 +95,11 @@ public class ManagerPlanTableAndMapView {
         this.prevY = prevY;
     }
 
-    public String getOffice() {
+    public Office getOffice() {
         return office;
     }
 
-    public void setOffice(String office) {
+    public void setOffice(Office office) {
         this.office = office;
     }
 }

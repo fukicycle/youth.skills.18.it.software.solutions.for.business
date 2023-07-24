@@ -16,7 +16,7 @@
                     <a class="btn" href="/login">ログアウト</a>
                 </div>
                 <div>
-                    <a class="btn" style="margin-left: 10px;" th:href="|/manager/menu?id=*{id}|">メニューへ戻る</a>
+                    <a class="btn" style="margin-left: 10px;" th:href="|/manager/menu?id=*{employeeId}|">戻る</a>
                 </div>
             </div>
         </div>
@@ -25,7 +25,7 @@
         <div>
             <form method="post" action="/manager/delivery/schedule/view" style="display: flex; align-items: center;">
                 <div>日付</div>
-                <input type="hidden" name="id" th:value="*{id}">
+                <input type="hidden" name="id" th:value="*{employeeId}">
                 <input type="date" name="date" th:value="*{date}" style="padding: 1rem; margin-left: 10px;">
                 <input type="submit" class="btn" style="margin-left: 10px; width: 200px;" value="表示">
             </form>
@@ -43,7 +43,7 @@
                         <td th:text="${#temporals.format(tableView.time,'HH:mm')}"></td>
                         <td th:text="${tableView.type}"></td>
                         <td>
-                            <a th:href="|/manager/delivery/schedule/plan?id=${tableView.deliveryScheduleId}|">順路計画</a>
+                            <a th:href="|/manager/delivery/schedule/plan?employeeId=*{employeeId}&id=${tableView.deliveryScheduleId}&date=*{date}|">順路計画</a>
                         </td>
                     </tr>
                     </tbody>
@@ -73,6 +73,7 @@
 	function format(value, character) {
 		return value.toString().padStart(2, '0') + character;
 	}
+
 
 </script>
 </body>

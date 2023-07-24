@@ -5,15 +5,15 @@ import java.util.List;
 
 public class ManagerDeliveryScheduleView {
     private String office;
-    private int id;
     private LocalDate date;
     private List<ManagerDeliveryScheduleTableView> tableViews;
+    private int employeeId;
 
-    public ManagerDeliveryScheduleView(String office, int id, LocalDate date, List<ManagerDeliveryScheduleTableView> tableViews) {
+    public ManagerDeliveryScheduleView(String office, LocalDate date, List<ManagerDeliveryScheduleTableView> tableViews, int employeeId) {
         this.office = office;
-        this.id = id;
         this.date = date;
         this.tableViews = tableViews;
+        this.employeeId = employeeId;
     }
 
     public ManagerDeliveryScheduleView() {
@@ -25,14 +25,6 @@ public class ManagerDeliveryScheduleView {
 
     public void setOffice(String office) {
         this.office = office;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public LocalDate getDate() {
@@ -49,5 +41,13 @@ public class ManagerDeliveryScheduleView {
 
     public void setTableViews(List<ManagerDeliveryScheduleTableView> tableViews) {
         this.tableViews = tableViews;
+    }
+
+    public int getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(int employeeId) {
+        this.employeeId = employeeId;
     }
 }

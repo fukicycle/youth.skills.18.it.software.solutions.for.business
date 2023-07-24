@@ -50,7 +50,7 @@ public class ManagerController {
     }
 
     @GetMapping("deliveryman/schedule")
-    public String deliverymanSchedule(Model model, int id, @RequestParam(required = false) LocalDate date) {
+    public String deliverymanSchedule(Model model, int id, LocalDate date) {
         if (date == null) {
             date = LocalDate.now();
         }
@@ -115,21 +115,27 @@ public class ManagerController {
             for (DeliverySchedule deliverySchedule : deliveryScheduleRepository.findAllByEmployeeIdAndEstimatedDate(employee1.getId(), date)) {
                 String type = deliveryTypeRepository.findById(deliverySchedule.getDeliveryTypeId()).orElseThrow().getName();
                 long count = deliveryScheduleDetailRepository.findAllByDeliveryScheduleId(deliverySchedule.getId()).stream().filter(a -> a.getDeliveryOrder() == 0).count();
-                managerDeliveryScheduleTableViews.add(new ManagerDeliveryScheduleTableView(deliverySchedule.getEstimatedStartTime(), type, count == 0 ? "#8f8" : "f88", deliverySchedule.getId()));
+                managerDeliveryScheduleTableViews.add(new ManagerDeliveryScheduleTableView(deliverySchedule.getEstimatedStartTime(), type, count == 0 ? "#8f8" : "#f88", deliverySchedule.getId()));
             }
         }
         //set view
         ManagerDeliveryScheduleView view = new ManagerDeliveryScheduleView();
         view.setOffice(office.getName());
         view.setDate(date);
-        view.setId(id);
+        view.setEmployeeId(id);
         view.setTableViews(managerDeliveryScheduleTableViews);
         model.addAttribute("view", view);
         return "manager_delivery_schedule";
     }
 
+    @PostMapping("delivery/plan/submit")
+    public String submit(Model model, boolean isCost, LocalDate date, int employeeId, int id) throws Exception {
+        deliverySchedulePlan(model, employeeId, id, isCost, date, true);
+        return "redirect:/manager/delivery/schedule?id=" + employeeId + "&date=" + date;
+    }
+
     @GetMapping("delivery/schedule/plan")
-    public String deliverySchedulePlan(Model model, int id, @RequestParam(defaultValue = "True") boolean isCost) throws Exception {
+    public String deliverySchedulePlan(Model model, int employeeId, int id, @RequestParam(defaultValue = "True") boolean isCost, LocalDate date, @RequestParam(defaultValue = "false") boolean isPost) throws Exception {
         DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(id).orElseThrow();
         Employee employee = employeeRepository.findById(deliverySchedule.getEmployeeId()).orElseThrow();
         Office office = officeRepository.findById(employee.getOfficeId()).orElseThrow();
@@ -159,26 +165,68 @@ public class ManagerController {
         points.add(0, startAndEndPoint);
         points.add(startAndEndPoint);
         List<PointWrapper> bestRoute = isCost ? TwoOpt.getCalculatedRoute(points) : points;
-
-        int seq = 0;
-        List<ManagerPlanTableAndMapView> mapItems = new ArrayList<>();
-        List<ManagerPlanTableAndMapView> tableItems = new ArrayList<>();
-        PointWrapper prevPoint = bestRoute.get(bestRoute.size() - 1);
-        for (PointWrapper point : bestRoute) {
-            if (point.getDelivery() == null) {
-                mapItems.add(new ManagerPlanTableAndMapView(seq++,"",null,null,point.getPoint().getX(),point.getPoint().getY(),prevPoint.getPoint().getX(),prevPoint.getPoint().getY(),office.getName()));
-            } else {
-
+        if (isPost) {
+            int seq = 1;
+            for (PointWrapper point : bestRoute) {
+                if (point.getDelivery() != null) {
+                    DeliveryScheduleDetail deliveryScheduleDetail = deliveryScheduleDetails.stream().filter(a -> a.getDeliveryId().equals(point.getDelivery().getId()) && a.getDeliveryScheduleId() == id).findFirst().orElseThrow();
+                    deliveryScheduleDetail.setDeliveryOrder(seq++);
+                    deliveryScheduleDetailRepository.save(deliveryScheduleDetail);
+                }
             }
+        } else {
+            int seq = 0;
+            final int MAP_RATIO = 35;
+            final int offset = 10;
+            double minX = bestRoute.stream().mapToDouble(a -> a.getPoint().getX()).min().getAsDouble();
+            double minY = bestRoute.stream().mapToDouble(a -> a.getPoint().getY()).min().getAsDouble();
+            double maxX = bestRoute.stream().mapToDouble(a -> a.getPoint().getX()).max().getAsDouble();
+            double maxY = bestRoute.stream().mapToDouble(a -> a.getPoint().getY()).max().getAsDouble();
+            List<ManagerPlanTableAndMapView> mapItems = new ArrayList<>();
+            List<ManagerPlanTableAndMapView> tableItems = new ArrayList<>();
+            PointWrapper prevPoint = bestRoute.get(bestRoute.size() - 1);
+            LocalTime estimatedTime = deliverySchedule.getEstimatedStartTime();
+            for (PointWrapper point : bestRoute) {
+                mapItems.add(new ManagerPlanTableAndMapView(seq,
+                        "",
+                        null,
+                        null,
+                        (point.getPoint().getX() - minX) * MAP_RATIO + offset,
+                        (point.getPoint().getY() - minY) * MAP_RATIO + offset,
+                        (prevPoint.getPoint().getX() - minX) * MAP_RATIO + offset,
+                        (prevPoint.getPoint().getY() - minY) * MAP_RATIO + offset,
+                        office));
+                if (point.getDelivery() != null) {
+                    estimatedTime = estimatedTime.plusMinutes(Math.round(prevPoint.getPoint().distance(point.getPoint())));
+                    tableItems.add(new ManagerPlanTableAndMapView(
+                            seq,
+                            deliverySchedule.getDeliveryTypeId() == 1 ? point.getDelivery().getSenderAddress() : point.getDelivery().getDestinationAddress(),
+                            estimatedTime,
+                            deliverySchedule.getDeliveryTypeId() == 1 ? point.getDelivery().getCollectionDatetime() : point.getDelivery().getDeliveryDatetime(),
+                            0, 0, 0, 0,
+                            office));
+                }
+                prevPoint = point;
+                seq++;
+            }
+
+            //set view
+            ManagerDeliverySchedulePlanView view = new ManagerDeliverySchedulePlanView();
+            view.setMaxWidth((maxX - minX) * MAP_RATIO + offset);
+            view.setMaxHeight((maxY - minY) * MAP_RATIO + offset);
+            view.setOfficeX((office.getxLocation() - minX) * MAP_RATIO + offset);
+            view.setOfficeY((office.getyLocation() - minY) * MAP_RATIO + offset);
+            view.setId(id);
+            view.setOffice(office);
+            view.setStartTime(deliverySchedule.getActualStartTime());
+            view.setCost(getCost(bestRoute));
+            view.setTableItems(tableItems);
+            view.setMapItems(mapItems);
+            view.setCost(isCost);
+            view.setEmployeeId(employeeId);
+            view.setDate(date);
+            model.addAttribute("view", view);
         }
-
-        //set view
-        ManagerDeliverySchedulePlanView view = new ManagerDeliverySchedulePlanView();
-        view.setOffice(office.getName());
-        view.setStartTime(deliverySchedule.getActualStartTime());
-        view.setCost(getCost(points));
-        model.addAttribute("view", view);
-
         return "manager_delivery_schedule_plan";
     }
 

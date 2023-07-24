@@ -5,8 +5,8 @@ import jp.co.toyota.sato.youth.skills18.entities.Delivery;
 import java.awt.geom.Point2D;
 
 public class PointWrapper {
-    public Point2D point;
-    public Delivery delivery;
+    private Point2D point;
+    private Delivery delivery;
 
     public PointWrapper(Point2D point, Delivery delivery) {
         this.point = point;

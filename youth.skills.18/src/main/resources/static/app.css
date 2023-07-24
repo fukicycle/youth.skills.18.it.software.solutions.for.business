@@ -4,7 +4,7 @@
     background-color: skyblue;
     padding: 1rem;
     border-radius: 1rem;
-    border: none;
+    border: solid 1px skyblue;
     outline: none;
     text-decoration: none;
     color: white;

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org/">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/app.css">
+    <title>Title</title>
+</head>
+<script>
+		function drawLine(start_x, start_y, end_x, end_y) {
+			const canvas = document.getElementById('canvas');
+			const c = canvas.getContext('2d');
+			c.beginPath();
+			c.moveTo(start_x, start_y);
+			c.lineTo(end_x, end_y);
+			c.lineWidth = 1;
+			c.stroke();
+			c.setTransform(1, 0, 0, 1, 0, 0);
+		}
+
+
+
+
+
+
+
+</script>
+<body th:object="${view}" style="text-align: left;">
+<div style="max-width:1300px; margin: auto;">
+    <div style="display: flex; align-items: top;">
+        <h1>配送スケジュール（<span th:text="*{office.name}">営業所A</span>）</h1>
+        <div style="margin-left: auto;">
+            <div id="time"></div>
+            <div style="display: flex;">
+                <div>
+                    <a class="btn" href="/login">ログアウト</a>
+                </div>
+                <div>
+                    <a class="btn" style="margin-left: 10px;"
+                       th:href="|/manager/delivery/schedule?id=*{employeeId}&date=*{date}|">戻る</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div>配送開始時刻:<span th:text="*{#temporals.format(startTime,'HH:mm')}"></span></div>
+    <div>コスト:<span th:text="*{cost}"></span>円</div>
+    <div style="width: 100%; display: grid; grid-template-columns: 50% 50%;">
+        <div style="padding: .5rem;">
+            <div>順番</div>
+            <table border="1">
+                <thead>
+                <tr>
+                    <th>順番</th>
+                    <th>住所</th>
+                    <th>予定時刻</th>
+                    <th>希望時刻</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="tableItem : *{tableItems}">
+                    <td th:text="${tableItem.sequence}"></td>
+                    <td th:text="${tableItem.address}"></td>
+                    <td th:text="${#temporals.format(tableItem.estimatedTime,'HH:mm')}"></td>
+                    <td th:text="${#temporals.format(tableItem.desiredDatetime,'HH:mm')}"></td>
+                </tr>
+                </tbody>
+            </table>
+            <div style="display: grid; grid-template-columns: 45% 45%; grid-column-gap: 10%; margin-top: 10px;">
+                <a class="btn"
+                   th:href="|/manager/delivery/schedule/plan?id=*{id}&isCost=true&employeeId=*{employeeId}&date=*{date}|"
+                   th:styleappend="*{isCost} ? '' : 'background-color: white; color: skyblue;'">コスト優先</a>
+                <a class="btn"
+                   th:href="|/manager/delivery/schedule/plan?id=*{id}&isCost=false&employeeId=*{employeeId}&date=*{date}|"
+                   th:styleappend="*{isCost} ? 'background-color: white; color: skyblue;' : ''">希望時間優先</a>
+            </div>
+            <form method="post" action="/manager/delivery/plan/submit" style="margin-top:10px;">
+                <input type="hidden" th:value="*{isCost}" name="isCost">
+                <input type="hidden" th:value="*{date}" name="date">
+                <input type="hidden" th:value="*{employeeId}" name="employeeId">
+                <input type="hidden" th:value="*{id}" name="id">
+                <input type="submit" style="font-size: 2rem;" value="順路確定" class="btn">
+            </form>
+        </div>
+        <div style="padding: .5rem;">
+            <div>順路</div>
+            <div style="overflow: auto;position: relative; width: 100%; height: 75vh;">
+                <img src="/home.png" th:each="mapItem : *{mapItems}"
+                     th:style="|position: absolute; top: ${mapItem.y}px; left: ${mapItem.x}px; width: 30px; height: 30px;|"
+                     alt="home"/>
+                <canvas th:style="|position: absolute; top: 0; left: 0;|" id="canvas" th:width="*{maxWidth}"
+                        th:height="*{maxHeight}">
+                    <script th:inline="javascript" th:each="mapItem : *{mapItems}">
+							drawLine([[${ mapItem.prevX }]], [[${ mapItem.prevY }]], [[${ mapItem.x }]], [[${ mapItem.y }]]);
+
+
+                    </script>
+                </canvas>
+                <div th:each="mapItem : *{mapItems}" th:text="${mapItem.sequence}"
+                     th:style="|position: absolute; background-color: #bbb; top: ${mapItem.y -10}px; left: ${mapItem.x - 10}px; width: 20px; height: 20px; border-radius: 10px;text-align: center;|">
+                </div>
+                <img src="/office.png"
+                     th:style="|width: 50px; height: 50px; position: absolute; top: *{officeY - 10}px; left: *{officeX - 10}px;|"
+                     alt="office"/>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+	getDatetime();
+	setInterval(getDatetime, 1000);
+	function getDatetime() {
+		const datetimeDiv = document.getElementById('time');
+		const currentDate = new Date();
+		const datetime = format(currentDate.getMonth() + 1, '/')
+			+ format(currentDate.getDate(), ' ')
+			+ format(currentDate.getHours(), ':')
+			+ format(currentDate.getMinutes(), ':')
+			+ format(currentDate.getSeconds(), '');
+		datetimeDiv.innerText = datetime;
+	}
+	function format(value, character) {
+		return value.toString().padStart(2, '0') + character;
+	}
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
