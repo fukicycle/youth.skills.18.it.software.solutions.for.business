@@ -1,8 +1,11 @@
 package jp.co.toyota.sato.youth.skills18.controllers;
 
+import jp.co.toyota.sato.youth.skills18.entities.Delivery;
 import jp.co.toyota.sato.youth.skills18.entities.DeliveryStatus;
 import jp.co.toyota.sato.youth.skills18.entities.Office;
+import jp.co.toyota.sato.youth.skills18.models.CustomerDeliveryStatusModel;
 import jp.co.toyota.sato.youth.skills18.models.CustomerDeliveryStatusView;
+import jp.co.toyota.sato.youth.skills18.repositories.DeliveryRepository;
 import jp.co.toyota.sato.youth.skills18.repositories.DeliveryStatusRepository;
 import jp.co.toyota.sato.youth.skills18.repositories.DeliveryStatusTypeRepository;
 import jp.co.toyota.sato.youth.skills18.repositories.OfficeRepository;
@@ -27,13 +30,17 @@ public class CustomerController {
     @Autowired
     private OfficeRepository officeRepository;
 
+    @Autowired
+    private DeliveryRepository deliveryRepository;
+
     @GetMapping("menu")
     public String getMenu(Model model) {
         return "customer_menu";
     }
 
     @GetMapping("delivery/status")
-    public String getDeliveryStatus(Model model) {
+    public String getDeliveryStatus(Model model, CustomerDeliveryStatusModel viewModel) {
+        model.addAttribute("viewModel", viewModel);
         return "customer_delivery_status";
     }
 
@@ -44,15 +51,15 @@ public class CustomerController {
         deliveryStatuses.sort(Comparator.comparing(DeliveryStatus::getDatetime));//昇順
         List<CustomerDeliveryStatusView> items = new ArrayList<>();
         for (DeliveryStatus deliveryStatus : deliveryStatuses) {
-            String status = deliveryStatusTypeRepository.findById(deliveryStatus.getDeliveryStatusTypeId()).get().getName();
+            String status = deliveryStatusTypeRepository.findById(deliveryStatus.getDeliveryStatusTypeId()).orElseThrow().getName();
             String office = officeRepository.findById(deliveryStatus.getOfficeId() == null ? 0 : deliveryStatus.getOfficeId()).orElse(new Office()).getName();
             items.add(new CustomerDeliveryStatusView(
                     status, deliveryStatus.getDatetime(), office
             ));
         }
-        model.addAttribute("items", items);
-        model.addAttribute("id", id);
+        CustomerDeliveryStatusModel viewModel;
         if (items.size() == 0) {
+            viewModel = new CustomerDeliveryStatusModel();
             model.addAttribute("error", "該当する配送情報がありません。");
         } else {
             String status = switch (deliveryStatuses.stream().mapToInt(DeliveryStatus::getDeliveryStatusTypeId).max().getAsInt()) {
@@ -60,8 +67,9 @@ public class CustomerController {
                 case 7 -> "配達済み";
                 default -> "配送中";
             };
-            model.addAttribute("status", status);
+            Delivery delivery = deliveryRepository.findById(id).orElseThrow();
+            viewModel = new CustomerDeliveryStatusModel(items, id, status, delivery.getDeliveryDatetime());
         }
-        return getDeliveryStatus(model);
+        return getDeliveryStatus(model, viewModel);
     }
 }
