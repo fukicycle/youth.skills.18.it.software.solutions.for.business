@@ -209,19 +209,31 @@ public class ManagerController {
             int y = zipcode.getyLocation();
             points.add(new PointWrapper(new Point(x, y), delivery));
         }
+
+        //希望時間優先の場合始点と終点として営業所を追加してしまうと順番が狂うため先に希望時間を基準に並べ替える。
         if (!isCost) {
+
+            //集荷の場合は集荷時間、配達の場合は配達時間を基準にソート
             if (deliverySchedule.getDeliveryTypeId() == 1) {
                 points.sort(Comparator.comparing(a -> a.getDelivery().getCollectionDatetime()));
             } else {
                 points.sort(Comparator.comparing(a -> a.getDelivery().getDeliveryDatetime()));
             }
         }
+
+        //始点と終点を追加
         points.add(0, startAndEndPoint);
         points.add(startAndEndPoint);
+
+        //コスト優先の場合はTwoOptアルゴリズムをもとに並べ替えた結果を取得。希望時間優先の場合はすでに並び変えてあるのでその結果を使用
         List<PointWrapper> bestRoute = isCost ? TwoOpt.getCalculatedRoute(points) : points;
+
+        //登録モードの場合はbestRouteの情報を基にDeliveryOrderをUpdateする。
         if (isPost) {
             int seq = 1;
             for (PointWrapper point : bestRoute) {
+
+                //配送元の営業所はgetDelivery()を実行するとNullが返ってくるのでそれ以外の時にUpdateを実行
                 if (point.getDelivery() != null) {
                     DeliveryScheduleDetail deliveryScheduleDetail = deliveryScheduleDetails.stream().filter(a -> a.getDeliveryId().equals(point.getDelivery().getId()) && a.getDeliveryScheduleId() == id).findFirst().orElseThrow();
                     deliveryScheduleDetail.setDeliveryOrder(seq++);
@@ -229,18 +241,32 @@ public class ManagerController {
                 }
             }
         } else {
+
+            //bestRouteをもとにMap表示用とTable表示用のリストを生成する
             int seq = 0;
+
+            //Mapの拡大倍率
             final int MAP_RATIO = 35;
+
+            //左上基準で始まるがオフセットがないと描画が見切れてしまうため設定
             final int offset = 10;
+
+            //位置調整のために最大値と最小値を取得
             double minX = bestRoute.stream().mapToDouble(a -> a.getPoint().getX()).min().getAsDouble();
             double minY = bestRoute.stream().mapToDouble(a -> a.getPoint().getY()).min().getAsDouble();
             double maxX = bestRoute.stream().mapToDouble(a -> a.getPoint().getX()).max().getAsDouble();
             double maxY = bestRoute.stream().mapToDouble(a -> a.getPoint().getY()).max().getAsDouble();
+
+            //リストを初期化
             List<ManagerPlanTableAndMapView> mapItems = new ArrayList<>();
             List<ManagerPlanTableAndMapView> tableItems = new ArrayList<>();
-            PointWrapper prevPoint = bestRoute.get(bestRoute.size() - 1);
+
+            //始点と終点に営業所のポイント、同一ポイントが入っているが、描画上問題ないのでひとつ前のポイントとして0番目を取得
+            PointWrapper prevPoint = bestRoute.get(0);
             LocalTime estimatedTime = deliverySchedule.getEstimatedStartTime();
             for (PointWrapper point : bestRoute) {
+
+                //Mapに描画する際は営業所の情報も必要なのですべてをListに追加
                 mapItems.add(new ManagerPlanTableAndMapView(seq,
                         "",
                         null,
@@ -250,6 +276,8 @@ public class ManagerController {
                         (prevPoint.getPoint().getX() - minX) * MAP_RATIO + offset,
                         (prevPoint.getPoint().getY() - minY) * MAP_RATIO + offset,
                         office));
+
+                //Table表示には営業所の情報が必要ないためDeliveryがNull以外のみListに追加
                 if (point.getDelivery() != null) {
                     estimatedTime = estimatedTime.plusMinutes(Math.round(prevPoint.getPoint().distance(point.getPoint())));
                     tableItems.add(new ManagerPlanTableAndMapView(
@@ -264,28 +292,31 @@ public class ManagerController {
                 seq++;
             }
 
-            //set viewModel
-            ManagerDeliverySchedulePlanModel viewModel = new ManagerDeliverySchedulePlanModel();
-            viewModel.setMaxWidth((maxX - minX) * MAP_RATIO + offset);
-            viewModel.setMaxHeight((maxY - minY) * MAP_RATIO + offset);
-            viewModel.setOfficeX((office.getxLocation() - minX) * MAP_RATIO + offset);
-            viewModel.setOfficeY((office.getyLocation() - minY) * MAP_RATIO + offset);
-            viewModel.setId(id);
-            viewModel.setOffice(office);
-            viewModel.setStartTime(deliverySchedule.getActualStartTime());
-            viewModel.setCost(getCost(bestRoute));
-            viewModel.setTableItems(tableItems);
-            viewModel.setMapItems(mapItems);
-            viewModel.setCost(isCost);
-            viewModel.setEmployeeId(employeeId);
-            viewModel.setDate(date);
+            //画面を構成するViewに値を表示※MVCを意識した作り。Model:manager_delivery_schedule_plan.html, View:viewModel, Controller: ManagerController.
+            ManagerDeliverySchedulePlanModel viewModel = new ManagerDeliverySchedulePlanModel(
+                    office,
+                    deliverySchedule.getEstimatedStartTime(),
+                    getCost(bestRoute),
+                    deliverySchedule.getId(),
+                    mapItems,
+                    tableItems,
+                    isCost,
+                    (maxX - minX) * MAP_RATIO + offset,
+                    (maxY - minY) * MAP_RATIO + offset,
+                    (office.getxLocation() - minX) * MAP_RATIO + offset,
+                    (office.getyLocation() - minY) * MAP_RATIO + offset,
+                    employeeId,
+                    date);
             model.addAttribute("viewModel", viewModel);
         }
         return "manager_delivery_schedule_plan";
     }
 
+    //指定された経路で回った際のコストを取得する
     private long getCost(List<PointWrapper> points) {
         double dist = TwoOpt.getRouteLength(points);
+
+        //前提として時速60Km/hなので1km=1minが成立するため単純にdistanceを60で割ると時間に直すことができる。
         return Math.round(dist / 60 * 360);
     }
 }

@@ -7,7 +7,6 @@ import java.time.LocalTime;
 import java.util.List;
 
 public class ManagerDeliverySchedulePlanModel {
-    private int id;
     private Office office;
     private LocalTime startTime;
     private long cost;
@@ -22,8 +21,7 @@ public class ManagerDeliverySchedulePlanModel {
     private int employeeId;
     private LocalDate date;
 
-    public ManagerDeliverySchedulePlanModel(int id, Office office, LocalTime startTime, long cost, int deliveryScheduleId, List<ManagerPlanTableAndMapView> mapItems, List<ManagerPlanTableAndMapView> tableItems, boolean isCost, double maxWidth, double maxHeight, double officeX, double officeY, int employeeId, LocalDate date) {
-        this.id = id;
+    public ManagerDeliverySchedulePlanModel( Office office, LocalTime startTime, long cost, int deliveryScheduleId, List<ManagerPlanTableAndMapView> mapItems, List<ManagerPlanTableAndMapView> tableItems, boolean isCost, double maxWidth, double maxHeight, double officeX, double officeY, int employeeId, LocalDate date) {
         this.office = office;
         this.startTime = startTime;
         this.cost = cost;
@@ -37,14 +35,6 @@ public class ManagerDeliverySchedulePlanModel {
         this.officeY = officeY;
         this.employeeId = employeeId;
         this.date = date;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public ManagerDeliverySchedulePlanModel() {

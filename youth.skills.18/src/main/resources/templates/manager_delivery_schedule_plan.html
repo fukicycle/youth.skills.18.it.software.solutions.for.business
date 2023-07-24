@@ -59,17 +59,17 @@
             </table>
             <div style="display: grid; grid-template-columns: 45% 45%; grid-column-gap: 10%; margin-top: 10px;">
                 <a class="btn"
-                   th:href="|/manager/delivery/schedule/plan?id=*{id}&isCost=true&employeeId=*{employeeId}&date=*{date}|"
+                   th:href="|/manager/delivery/schedule/plan?id=*{deliveryScheduleId}&isCost=true&employeeId=*{employeeId}&date=*{date}|"
                    th:styleappend="*{isCost} ? '' : 'background-color: white; color: skyblue;'">コスト優先</a>
                 <a class="btn"
-                   th:href="|/manager/delivery/schedule/plan?id=*{id}&isCost=false&employeeId=*{employeeId}&date=*{date}|"
+                   th:href="|/manager/delivery/schedule/plan?id=*{deliveryScheduleId}&isCost=false&employeeId=*{employeeId}&date=*{date}|"
                    th:styleappend="*{isCost} ? 'background-color: white; color: skyblue;' : ''">希望時間優先</a>
             </div>
             <form method="post" action="/manager/delivery/plan/submit" style="margin-top:10px;">
                 <input type="hidden" th:value="*{isCost}" name="isCost">
                 <input type="hidden" th:value="*{date}" name="date">
                 <input type="hidden" th:value="*{employeeId}" name="employeeId">
-                <input type="hidden" th:value="*{id}" name="id">
+                <input type="hidden" th:value="*{deliveryScheduleId}" name="id">
                 <input type="submit" style="font-size: 2rem;" value="順路確定" class="btn">
             </form>
         </div>
@@ -113,13 +113,6 @@
 	function format(value, character) {
 		return value.toString().padStart(2, '0') + character;
 	}
-
-
-
-
-
-
-
 </script>
 </body>
 </html>
