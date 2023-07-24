@@ -47,7 +47,7 @@ public class DeliverymanController {
 
     @GetMapping("menu")
     public String getMenu(Model model, int id) {
-        Employee employee = employeeRepository.findById(id).orElse(new Employee());
+        Employee employee = employeeRepository.findById(id).orElseThrow();
         List<DeliverySchedule> deliverySchedules = deliveryScheduleRepository.findAllByEmployeeIdAndEstimatedDateAndActualDateIsNull(employee.getId(), LocalDate.now());
         List<DeliveryType> deliveryTypes = deliveryTypeRepository.findAll();
         List<DeliverymanMenuView> items = new ArrayList<>();
