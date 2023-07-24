@@ -1,14 +1,10 @@
 package jp.co.toyota.sato.youth.skills18.models;
 
-import jp.co.toyota.sato.youth.skills18.entities.DeliverySchedule;
-import jp.co.toyota.sato.youth.skills18.entities.DeliveryType;
-
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-public class ManagerDeliverymanScheduleView {
+public class ManagerDeliverymanScheduleModel {
     private int id;
     private String office;
     private LocalDate date;
@@ -16,7 +12,7 @@ public class ManagerDeliverymanScheduleView {
     private List<LocalTime> times;
     private List<ManagerDeliverymanScheduleTableView> tableViews;
 
-    public ManagerDeliverymanScheduleView(int id, String office, LocalDate date, List<DeliveryTypeWrapper> deliveryTypes, List<LocalTime> times, List<ManagerDeliverymanScheduleTableView> tableViews) {
+    public ManagerDeliverymanScheduleModel(int id, String office, LocalDate date, List<DeliveryTypeWrapper> deliveryTypes, List<LocalTime> times, List<ManagerDeliverymanScheduleTableView> tableViews) {
         this.id = id;
         this.office = office;
         this.date = date;
@@ -25,7 +21,7 @@ public class ManagerDeliverymanScheduleView {
         this.tableViews = tableViews;
     }
 
-    public ManagerDeliverymanScheduleView() {
+    public ManagerDeliverymanScheduleModel() {
     }
 
     public int getId() {

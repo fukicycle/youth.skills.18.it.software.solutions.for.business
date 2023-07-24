@@ -23,6 +23,7 @@ import java.util.Random;
 @Controller
 @RequestMapping("manager")
 public class ManagerController {
+    //依存関係の注入
     @Autowired
     private EmployeeRepository employeeRepository;
     @Autowired
@@ -38,93 +39,131 @@ public class ManagerController {
     @Autowired
     private ZipcodeRepository zipcodeRepository;
 
+    /*管理者メニューの表示
+     * 引数には管理者のIDが入る*/
     @GetMapping("menu")
     public String getMenu(Model model, int id) {
         model.addAttribute("id", id);
         return "manager_menu";
     }
 
+    /*配達員スケジュールの日付変更時に呼ばれる。
+     * Postメソッドなので引数の値はBodyに含まれる*/
     @PostMapping("deliveryman/schedule/view")
     public String deliverymanScheduleView(Model model, int id, LocalDate date) {
+
+        //更新した情報で配達員スケジュールを再描画
         return deliverymanSchedule(model, id, date);
     }
 
+    /*配達員スケジュールを表示する
+     * 引数のDateが空だった場合今日の日付をいれる。*/
     @GetMapping("deliveryman/schedule")
     public String deliverymanSchedule(Model model, int id, LocalDate date) {
         if (date == null) {
             date = LocalDate.now();
         }
+
+        //必要な情報を取得
         Employee employee = employeeRepository.findById(id).orElseThrow();
         Office office = officeRepository.findById(employee.getOfficeId()).orElseThrow();
         List<Employee> employees = employeeRepository.findAllByOfficeIdAndIsAdminIsFalse(employee.getOfficeId());
         List<DeliveryType> deliveryTypes = deliveryTypeRepository.findAll();
+
+        //画面で使うListの生成
         List<DeliveryTypeWrapper> deliveryTypeWrappers = new ArrayList<>();
         List<LocalTime> times = new ArrayList<>();
         List<ManagerDeliverymanScheduleTableView> tableViews = new ArrayList<>();
+
+        //色を動的に生成するためにRandomインスタンスを生成
         Random r = new Random();
         for (DeliveryType deliveryType : deliveryTypes) {
+
+            //動的に色を生成
+            //今回はマニュアルで設定してください。
             String color = String.format("rgb(%d, %d, %d)", 255 - (r.nextInt(1, 5) * 40), 255 - (r.nextInt(1, 5) * 40), 255 - (r.nextInt(1, 5) * 40));
+
+            //色とタイプをセットにし、画面で扱いやすくするためにWrapperクラスを生成
             deliveryTypeWrappers.add(new DeliveryTypeWrapper(deliveryType.getId(), deliveryType.getName(), color));
         }
+
+        //テーブルのカラムを生成するために時間リストを生成する。
         int count = 0;
+
+        //管理者が所属する営業所の全配達員のスケジュールを突き合わせる
         for (Employee employee1 : employees) {
             List<DeliverySchedule> deliverySchedules = deliveryScheduleRepository.findAllByEmployeeIdAndEstimatedDate(employee1.getId(), date);
             List<String> items = new ArrayList<>();
+
+            //8:00 ~ 18:30でfor文を回したいため、終了は18:31を指定する。
             for (LocalTime time = LocalTime.of(8, 0); time.isBefore(LocalTime.of(18, 31)); time = time.plusMinutes(30)) {
+
+                //countが0の時（初回）のみ時間リストに時間を追加する。
                 if (count == 0) {
                     times.add(time);
                 }
                 LocalTime finalTime = time;
+
+                //該当の時間に作業が入っていればtrue入っていなければfalse
                 var tmp = deliverySchedules.stream().filter(a -> a.getEstimatedStartTime().isBefore(finalTime.plusMinutes(1)) && a.getEstimatedEndTime().isAfter(finalTime)).findFirst();
                 if (tmp.isPresent()) {
+
+                    //作業が入っている場合はその作業のタイプに合わせて色を入れる
                     items.add(deliveryTypeWrappers.stream().filter(b -> b.getId() == tmp.get().getDeliveryTypeId()).findFirst().orElseThrow().getColor());
                 } else {
+
+                    //作業が入ってない場合はそのセルを#bbbで塗りつぶす。
                     items.add("#bbb");
                 }
             }
+
+            //テーブル（表）表示の時に利用するリストに値を追加。配達員名をKey、配達員のスケジュール情報をValueとして保存している。
             tableViews.add(new ManagerDeliverymanScheduleTableView(employee1.getName(), items));
             count++;
         }
-        //set view
-        ManagerDeliverymanScheduleView view = new ManagerDeliverymanScheduleView();
-        view.setId(employee.getId());
-        view.setDate(date);
-        view.setDeliveryTypes(deliveryTypeWrappers);
-        view.setOffice(office.getName());
-        view.setTimes(times);
-        view.setTableViews(tableViews);
-        model.addAttribute("view", view);
+
+        //画面を構成するViewに値を表示※MVCを意識した作り。Model:manager_deliveryman_schedule.html, View:viewModel, Controller: ManagerController.
+        ManagerDeliverymanScheduleModel viewModel = new ManagerDeliverymanScheduleModel(employee.getId(), office.getName(), date, deliveryTypeWrappers, times, tableViews);
+        model.addAttribute("viewModel", viewModel);
         return "manager_deliveryman_schedule";
     }
 
+    /* 配送スケジュールの日付変更時に呼ばれる。
+     * Postメソッドなので引数の値はBodyに含まれる*/
     @PostMapping("delivery/schedule/view")
     public String deliveryScheduleView(Model model, int id, LocalDate date) {
         return deliverySchedule(model, id, date);
     }
 
+    /* 配送スケジュールを表示する
+     * 引数のDateが空だった場合今日の日付をいれる。*/
     @GetMapping("delivery/schedule")
     public String deliverySchedule(Model model, int id, LocalDate date) {
         if (date == null) {
             date = LocalDate.now();
         }
+
+        //必要な情報を取得
         Employee employee = employeeRepository.findById(id).orElseThrow();
         Office office = officeRepository.findById(employee.getOfficeId()).orElseThrow();
         List<Employee> employees = employeeRepository.findAllByOfficeIdAndIsAdminIsFalse(employee.getOfficeId());
+
+        //画面で使うListの生成
         List<ManagerDeliveryScheduleTableView> managerDeliveryScheduleTableViews = new ArrayList<>();
+
+        //全配達員のスケジュールを1つのリストで表示する必要があるため全配達員のスケジュールを取得する。
         for (Employee employee1 : employees) {
-            for (DeliverySchedule deliverySchedule : deliveryScheduleRepository.findAllByEmployeeIdAndEstimatedDate(employee1.getId(), date)) {
+
+            //配送タイプが集荷または配達のみ表示する。
+            for (DeliverySchedule deliverySchedule : deliveryScheduleRepository.findAllByEmployeeIdAndEstimatedDate(employee1.getId(), date).stream().filter(a -> a.getDeliveryTypeId() == 1 || a.getDeliveryTypeId() == 2).toList()) {
                 String type = deliveryTypeRepository.findById(deliverySchedule.getDeliveryTypeId()).orElseThrow().getName();
                 long count = deliveryScheduleDetailRepository.findAllByDeliveryScheduleId(deliverySchedule.getId()).stream().filter(a -> a.getDeliveryOrder() == 0).count();
                 managerDeliveryScheduleTableViews.add(new ManagerDeliveryScheduleTableView(deliverySchedule.getEstimatedStartTime(), type, count == 0 ? "#8f8" : "#f88", deliverySchedule.getId()));
             }
         }
-        //set view
-        ManagerDeliveryScheduleView view = new ManagerDeliveryScheduleView();
-        view.setOffice(office.getName());
-        view.setDate(date);
-        view.setEmployeeId(id);
-        view.setTableViews(managerDeliveryScheduleTableViews);
-        model.addAttribute("view", view);
+        //画面を構成するViewに値を表示※MVCを意識した作り。Model:manager_delivery_schedule.html, View:viewModel, Controller: ManagerController.
+        ManagerDeliveryScheduleModel viewModel = new ManagerDeliveryScheduleModel(office.getName(), date, managerDeliveryScheduleTableViews, id);
+        model.addAttribute("viewModel", viewModel);
         return "manager_delivery_schedule";
     }
 
@@ -134,18 +173,33 @@ public class ManagerController {
         return "redirect:/manager/delivery/schedule?id=" + employeeId + "&date=" + date;
     }
 
+    /*
+     * 配送スケジュール計画画面
+     * リストをBodyに含めてPostする方法が分からないためPostの際にもIsPostをTrueで呼び出す。
+     * 共通メソッド
+     * また、1つ前の画面戻る際にDateが必要なためクエリパラメータとして取得する必要がある。
+     */
     @GetMapping("delivery/schedule/plan")
     public String deliverySchedulePlan(Model model, int employeeId, int id, @RequestParam(defaultValue = "True") boolean isCost, LocalDate date, @RequestParam(defaultValue = "false") boolean isPost) throws Exception {
+
+        //必要な情報を取得
+        //id指定で必ずとれる必要がある値が取れない場合はExceptionをスローする。スローされたExceptionはerror.htmlにてキャッチされる。
         DeliverySchedule deliverySchedule = deliveryScheduleRepository.findById(id).orElseThrow();
         Employee employee = employeeRepository.findById(deliverySchedule.getEmployeeId()).orElseThrow();
         Office office = officeRepository.findById(employee.getOfficeId()).orElseThrow();
         List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleId(id);
         if (deliveryScheduleDetails.size() == 0) throw new Exception("配送スケジュール詳細が存在しません。");
+
+        //画面で使うListを生成
         List<PointWrapper> points = new ArrayList<>();
+
+        //アルゴリズムにより経路決定する為の準備（Point、Deliveryの情報を保持するWrapperクラスを生成。）
         PointWrapper startAndEndPoint = new PointWrapper(new Point(office.getxLocation(), office.getyLocation()), null);
         for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
             Delivery delivery = deliveryRepository.findById(deliveryScheduleDetail.getDeliveryId()).orElseThrow();
             Zipcode zipcode;
+
+            //集荷の場合はSender、それ以外の場合はDestinationの値を追加
             if (deliverySchedule.getDeliveryTypeId() == 1) {
                 zipcode = zipcodeRepository.findById(delivery.getSenderZipcode()).orElseThrow();
             } else {
@@ -210,22 +264,22 @@ public class ManagerController {
                 seq++;
             }
 
-            //set view
-            ManagerDeliverySchedulePlanView view = new ManagerDeliverySchedulePlanView();
-            view.setMaxWidth((maxX - minX) * MAP_RATIO + offset);
-            view.setMaxHeight((maxY - minY) * MAP_RATIO + offset);
-            view.setOfficeX((office.getxLocation() - minX) * MAP_RATIO + offset);
-            view.setOfficeY((office.getyLocation() - minY) * MAP_RATIO + offset);
-            view.setId(id);
-            view.setOffice(office);
-            view.setStartTime(deliverySchedule.getActualStartTime());
-            view.setCost(getCost(bestRoute));
-            view.setTableItems(tableItems);
-            view.setMapItems(mapItems);
-            view.setCost(isCost);
-            view.setEmployeeId(employeeId);
-            view.setDate(date);
-            model.addAttribute("view", view);
+            //set viewModel
+            ManagerDeliverySchedulePlanModel viewModel = new ManagerDeliverySchedulePlanModel();
+            viewModel.setMaxWidth((maxX - minX) * MAP_RATIO + offset);
+            viewModel.setMaxHeight((maxY - minY) * MAP_RATIO + offset);
+            viewModel.setOfficeX((office.getxLocation() - minX) * MAP_RATIO + offset);
+            viewModel.setOfficeY((office.getyLocation() - minY) * MAP_RATIO + offset);
+            viewModel.setId(id);
+            viewModel.setOffice(office);
+            viewModel.setStartTime(deliverySchedule.getActualStartTime());
+            viewModel.setCost(getCost(bestRoute));
+            viewModel.setTableItems(tableItems);
+            viewModel.setMapItems(mapItems);
+            viewModel.setCost(isCost);
+            viewModel.setEmployeeId(employeeId);
+            viewModel.setDate(date);
+            model.addAttribute("viewModel", viewModel);
         }
         return "manager_delivery_schedule_plan";
     }

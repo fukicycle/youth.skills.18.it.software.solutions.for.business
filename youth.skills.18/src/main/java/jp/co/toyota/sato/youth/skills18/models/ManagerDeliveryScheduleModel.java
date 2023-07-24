@@ -3,20 +3,20 @@ package jp.co.toyota.sato.youth.skills18.models;
 import java.time.LocalDate;
 import java.util.List;
 
-public class ManagerDeliveryScheduleView {
+public class ManagerDeliveryScheduleModel {
     private String office;
     private LocalDate date;
     private List<ManagerDeliveryScheduleTableView> tableViews;
     private int employeeId;
 
-    public ManagerDeliveryScheduleView(String office, LocalDate date, List<ManagerDeliveryScheduleTableView> tableViews, int employeeId) {
+    public ManagerDeliveryScheduleModel(String office, LocalDate date, List<ManagerDeliveryScheduleTableView> tableViews, int employeeId) {
         this.office = office;
         this.date = date;
         this.tableViews = tableViews;
         this.employeeId = employeeId;
     }
 
-    public ManagerDeliveryScheduleView() {
+    public ManagerDeliveryScheduleModel() {
     }
 
     public String getOffice() {

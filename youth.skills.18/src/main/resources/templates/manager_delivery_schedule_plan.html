@@ -16,15 +16,8 @@
 			c.stroke();
 			c.setTransform(1, 0, 0, 1, 0, 0);
 		}
-
-
-
-
-
-
-
 </script>
-<body th:object="${view}" style="text-align: left;">
+<body th:object="${viewModel}" style="text-align: left;">
 <div style="max-width:1300px; margin: auto;">
     <div style="display: flex; align-items: top;">
         <h1>配送スケジュール（<span th:text="*{office.name}">営業所A</span>）</h1>
