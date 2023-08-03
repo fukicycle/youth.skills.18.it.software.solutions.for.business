@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/app.css">
+    <title>Title</title>
+</head>
+<body th:object="${viewModel}">
+<div style="margin: auto;max-width:500px; height: 100%; display: flex; flex-direction: column;">
+    <h1>配達状況確認</h1>
+    <form style="text-align: left;" action="/customer/post/search" method="post">
+        <div>配送情報ID</div>
+        <div style="display: flex;">
+            <input type="text" name="id" th:value="*{id}" style="width:100%;"/>
+            <input type="submit" value="検索" class="btn" style="margin: 0; margin-left: 10px; width: 150px;"/>
+        </div>
+    </form>
+    <div style="margin-top: 10px; display: flex;">
+        <div th:text="*{status}">配送中</div>
+        <div style="margin: 0; margin-left: auto;">受け取り予定日時:
+            <span style="font-weight: bold;"
+                  th:text="*{#temporals.format(scheduleDatetime,'MM/dd HH:mm')}">08/07 11:00</span>
+        </div>
+    </div>
+    <div style="margin-top: 10px; flex-grow: 1; overflow: auto;">
+        <div th:text="${error}"></div>
+        <div th:each="item : *{items}"
+             style="margin-bottom: 10px; padding: 1rem; border-radius: 1rem; display: grid; grid-template-columns: 20% 60% 20%; border: solid 1px black;">
+            <div th:text="${item.status}"></div>
+            <div th:text="${#temporals.format(item.datetime,'MM/dd HH:mm')}"></div>
+            <div th:text="${item.office}"></div>
+        </div>
+    </div>
+    <a style="margin: 10px 0;" class="btn" href="/customer/menu">メニューへ戻る</a>
+</div>
+</body>
+</html>

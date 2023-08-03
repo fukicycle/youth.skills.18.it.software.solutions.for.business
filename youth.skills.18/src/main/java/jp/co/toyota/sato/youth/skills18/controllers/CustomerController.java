@@ -72,4 +72,9 @@ public class CustomerController {
         }
         return getDeliveryStatus(model, viewModel);
     }
+
+    @GetMapping("delivery/change")
+    public String getDeliveryChange(Model model){
+        return "customer_delivery_change";
+    }
 }
