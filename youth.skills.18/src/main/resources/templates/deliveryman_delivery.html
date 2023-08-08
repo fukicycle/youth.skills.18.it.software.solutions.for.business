@@ -37,6 +37,12 @@
                 <input type="hidden" th:value="*{deliveryScheduleId}" name="deliveryScheduleId">
                 <input type="submit" style="margin: 10px 0; width: 80%;" class="btn" value="完了"/>
             </form>
+            <form method="post" action="/deliveryman/post/absence">
+                <input type="hidden" th:value="*{delivery.id}" name="currentDeliveryId">
+                <input type="hidden" th:value="*{deliveryScheduleId}" name="deliveryScheduleId">
+                <input type="submit" style="margin: 10px 0; width: 80%;" class="btn" value="不在"/>
+            </form>
+
         </div>
         <div>
             <div>順番</div>

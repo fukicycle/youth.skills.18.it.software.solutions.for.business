@@ -88,6 +88,7 @@ public class DeliverymanController {
     public String nextPickup(Model model, String currentDeliveryId, int deliveryScheduleId) {
         DeliveryScheduleDetail deliveryScheduleDetail = deliveryScheduleDetailRepository.findByDeliveryIdAndDeliveryScheduleId(currentDeliveryId, deliveryScheduleId).orElseThrow();
         deliveryScheduleDetail.setActualTime(LocalTime.now());
+        deliveryScheduleDetail.setDone(true);
         deliveryScheduleDetailRepository.save(deliveryScheduleDetail);
         DeliveryStatus deliveryStatus = new DeliveryStatus(0, currentDeliveryId, LocalDateTime.now(), 2, null);
         deliveryStatusRepository.save(deliveryStatus);
@@ -131,16 +132,28 @@ public class DeliverymanController {
         return "deliveryman_pickup";
     }
 
+    @PostMapping("post/absence")
+    public String postAbsence(Model model,String currentDeliveryId,int deliveryScheduleId){
+        DeliveryScheduleDetail deliveryScheduleDetail = deliveryScheduleDetailRepository.findByDeliveryIdAndDeliveryScheduleId(currentDeliveryId, deliveryScheduleId).orElseThrow();
+        deliveryScheduleDetail.setActualTime(LocalTime.now());
+        deliveryScheduleDetail.setDone(false);
+        deliveryScheduleDetailRepository.save(deliveryScheduleDetail);
+        DeliveryStatus deliveryStatus = new DeliveryStatus(0, currentDeliveryId, LocalDateTime.now(), 8, null);
+        deliveryStatusRepository.save(deliveryStatus);
+        System.out.println("Absence!:" + currentDeliveryId);
+        return delivery(model,deliveryScheduleId);
+    }
 
     @PostMapping("next/delivery")
     public String nextDelivery(Model model, String currentDeliveryId, int deliveryScheduleId) {
         DeliveryScheduleDetail deliveryScheduleDetail = deliveryScheduleDetailRepository.findByDeliveryIdAndDeliveryScheduleId(currentDeliveryId, deliveryScheduleId).orElseThrow();
         deliveryScheduleDetail.setActualTime(LocalTime.now());
+        deliveryScheduleDetail.setDone(true);
         deliveryScheduleDetailRepository.save(deliveryScheduleDetail);
         DeliveryStatus deliveryStatus = new DeliveryStatus(0, currentDeliveryId, LocalDateTime.now(), 7, null);
         deliveryStatusRepository.save(deliveryStatus);
         System.out.println("Delivery!:" + currentDeliveryId);
-        return pickup(model, deliveryScheduleId);
+        return delivery(model, deliveryScheduleId);
     }
 
     @GetMapping("delivery")
@@ -189,6 +202,7 @@ public class DeliverymanController {
         List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleIdAndActualTimeIsNull(deliveryScheduleId);
         for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
             deliveryScheduleDetail.setActualTime(LocalTime.now());
+            deliveryScheduleDetail.setDone(true);
             DeliveryStatus deliveryStatus = new DeliveryStatus(0, deliveryScheduleDetail.getDeliveryId(), LocalDateTime.now(), 5, officeDelivery.getDestinationOfficeId());
             deliveryStatusRepository.save(deliveryStatus);
         }
@@ -234,6 +248,7 @@ public class DeliverymanController {
         List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleIdAndActualTimeIsNull(deliveryScheduleId);
         for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
             deliveryScheduleDetail.setActualTime(LocalTime.now());
+            deliveryScheduleDetail.setDone(true);
             DeliveryStatus deliveryStatus = new DeliveryStatus(0, deliveryScheduleDetail.getDeliveryId(), LocalDateTime.now(), 5, officeDelivery.getDestinationOfficeId());
             deliveryStatusRepository.save(deliveryStatus);
         }
@@ -279,6 +294,7 @@ public class DeliverymanController {
         List<DeliveryScheduleDetail> deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleIdAndActualTimeIsNull(deliveryScheduleId);
         for (DeliveryScheduleDetail deliveryScheduleDetail : deliveryScheduleDetails) {
             deliveryScheduleDetail.setActualTime(LocalTime.now());
+            deliveryScheduleDetail.setDone(true);
             DeliveryStatus deliveryStatus = new DeliveryStatus(0, deliveryScheduleDetail.getDeliveryId(), LocalDateTime.now(), 5, officeDelivery.getDestinationOfficeId());
             deliveryStatusRepository.save(deliveryStatus);
         }

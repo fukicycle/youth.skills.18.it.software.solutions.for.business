@@ -21,14 +21,17 @@ public class DeliveryScheduleDetail {
     private LocalTime estimatedTime;
     @Column(name = "actual_time")
     private LocalTime actualTime;
+    @Column(name = "is_done")
+    private boolean isDone;
 
-    public DeliveryScheduleDetail(int id, int deliveryScheduleId, String deliveryId, int deliveryOrder, LocalTime estimatedTime, LocalTime actualTime) {
+    public DeliveryScheduleDetail(int id, int deliveryScheduleId, String deliveryId, int deliveryOrder, LocalTime estimatedTime, LocalTime actualTime, boolean isDone) {
         this.id = id;
         this.deliveryScheduleId = deliveryScheduleId;
         this.deliveryId = deliveryId;
         this.deliveryOrder = deliveryOrder;
         this.estimatedTime = estimatedTime;
         this.actualTime = actualTime;
+        this.isDone = isDone;
     }
 
     public DeliveryScheduleDetail() {
@@ -80,5 +83,13 @@ public class DeliveryScheduleDetail {
 
     public void setActualTime(LocalTime actualTime) {
         this.actualTime = actualTime;
+    }
+
+    public boolean isDone() {
+        return isDone;
+    }
+
+    public void setDone(boolean done) {
+        isDone = done;
     }
 }
