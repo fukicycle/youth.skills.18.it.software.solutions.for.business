@@ -3,6 +3,7 @@ package jp.co.toyota.sato.youth.skills18.controllers;
 import jp.co.toyota.sato.youth.skills18.entities.Delivery;
 import jp.co.toyota.sato.youth.skills18.entities.DeliveryStatus;
 import jp.co.toyota.sato.youth.skills18.entities.Office;
+import jp.co.toyota.sato.youth.skills18.models.CustomerDeliveryChangeModel;
 import jp.co.toyota.sato.youth.skills18.models.CustomerDeliveryStatusModel;
 import jp.co.toyota.sato.youth.skills18.models.CustomerDeliveryStatusView;
 import jp.co.toyota.sato.youth.skills18.repositories.DeliveryRepository;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -68,13 +72,31 @@ public class CustomerController {
                 default -> "配送中";
             };
             Delivery delivery = deliveryRepository.findById(id).orElseThrow();
-            viewModel = new CustomerDeliveryStatusModel(items, id, status, delivery.getDeliveryDatetime());
+            viewModel = new CustomerDeliveryStatusModel(items, id, status, delivery.getDeliveryDatetime(), false);
         }
         return getDeliveryStatus(model, viewModel);
     }
 
+    @PostMapping("post/change")
+    public String postChange(Model model, String deliveryId, LocalDate date, LocalTime time, String zipcode, String address) {
+        Delivery delivery = deliveryRepository.findById(deliveryId).orElseThrow();
+        delivery.setDeliveryDatetime(LocalDateTime.of(date, time));
+        delivery.setDestinationAddress(address);
+        delivery.setDestinationZipcode(zipcode);
+        deliveryRepository.save(delivery);
+        return postSearch(model, deliveryId);
+    }
+
     @GetMapping("delivery/change")
-    public String getDeliveryChange(Model model){
+    public String getDeliveryChange(Model model, String deliveryId) {
+        Delivery delivery = deliveryRepository.findById(deliveryId).orElseThrow();
+        var viewModel = new CustomerDeliveryChangeModel();
+        viewModel.setAddress(delivery.getDestinationAddress());
+        viewModel.setZipcode(delivery.getDestinationZipcode());
+        viewModel.setDeliveryId(delivery.getId());
+        viewModel.setDate(delivery.getDeliveryDatetime().toLocalDate());
+        viewModel.setTime(delivery.getDeliveryDatetime().toLocalTime());
+        model.addAttribute("viewModel", viewModel);
         return "customer_delivery_change";
     }
 }

@@ -226,7 +226,8 @@ public class ManagerController {
         points.add(startAndEndPoint);
 
         //コスト優先の場合はTwoOptアルゴリズムをもとに並べ替えた結果を取得。希望時間優先の場合はすでに並び変えてあるのでその結果を使用
-        List<PointWrapper> bestRoute = isCost ? TwoOpt.getCalculatedRoute(points) : points;
+//        List<PointWrapper> bestRoute = isCost ? TwoOpt.getCalculatedRoute(points) : points;
+        List<PointWrapper> bestRoute = isCost ? TwoOpt.optimazedRoute(points) : points;
 
         //登録モードの場合はbestRouteの情報を基にDeliveryOrderをUpdateする。
         if (isPost) {

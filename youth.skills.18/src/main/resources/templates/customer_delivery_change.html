@@ -7,31 +7,28 @@
 </head>
 <body th:object="${viewModel}">
 <div style="margin: auto;max-width:500px; height: 100%; display: flex; flex-direction: column;">
-    <h1>配達状況確認</h1>
-    <form style="text-align: left;" action="/customer/post/search" method="post">
-        <div>配送情報ID</div>
-        <div style="display: flex;">
-            <input type="text" name="id" th:value="*{id}" style="width:100%;"/>
-            <input type="submit" value="検索" class="btn" style="margin: 0; margin-left: 10px; width: 150px;"/>
+    <h1>配送依頼変更</h1>
+    <form method="post" style="margin-top: 10px;" action="/customer/post/change">
+        <div style="display: grid; grid-template-columns: 40% 60%;" class="form-area">
+            <div>ご希望日</div>
+            <input type="date" th:value="*{date}" name="date">
+            <div>ご希望時間</div>
+            <input type="time" th:value="*{time}" name="time">
+            <div>配達先郵便番号</div>
+            <input type="text" th:value="*{zipcode}" name="zipcode">
+            <div>配達先住所</div>
+            <input type="text" th:value="*{address}" name="address">
+            <input type="hidden" th:value="*{deliveryId}" name="deliveryId">
         </div>
+        <input type="submit" value="変更" class="btn"/>
     </form>
-    <div style="margin-top: 10px; display: flex;">
-        <div th:text="*{status}">配送中</div>
-        <div style="margin: 0; margin-left: auto;">受け取り予定日時:
-            <span style="font-weight: bold;"
-                  th:text="*{#temporals.format(scheduleDatetime,'MM/dd HH:mm')}">08/07 11:00</span>
-        </div>
-    </div>
-    <div style="margin-top: 10px; flex-grow: 1; overflow: auto;">
-        <div th:text="${error}"></div>
-        <div th:each="item : *{items}"
-             style="margin-bottom: 10px; padding: 1rem; border-radius: 1rem; display: grid; grid-template-columns: 20% 60% 20%; border: solid 1px black;">
-            <div th:text="${item.status}"></div>
-            <div th:text="${#temporals.format(item.datetime,'MM/dd HH:mm')}"></div>
-            <div th:text="${item.office}"></div>
-        </div>
-    </div>
-    <a style="margin: 10px 0;" class="btn" href="/customer/menu">メニューへ戻る</a>
+    <button class="btn" style="margin: 10px 0;" onclick="history.back();">戻る</button>
 </div>
 </body>
+<style>
+    .form-area > * {
+        padding: .5rem;
+        margin: 10px;
+    }
+</style>
 </html>

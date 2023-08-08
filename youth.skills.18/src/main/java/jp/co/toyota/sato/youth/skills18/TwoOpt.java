@@ -33,6 +33,26 @@ public class TwoOpt {
         return points;
     }
 
+    public static List<PointWrapper> optimazedRoute(List<PointWrapper> points) {
+        int routeSize = points.size();
+        boolean improvement = true;
+        while (improvement) {
+            improvement = false;
+            for (int i = 1; i < routeSize - 2; i++) {
+                for (int j = i + 1; j < routeSize - 1; j++) {
+                    List<PointWrapper> newRoute = swap(points,i,j);
+                    double currentDistance = getRouteLength(points);
+                    double newDistance = getRouteLength(newRoute);
+                    if(currentDistance > newDistance) {
+                        points = newRoute;
+                        improvement = true;
+                    }
+                }
+            }
+        }
+        return points;
+    }
+
     public static double getRouteLength(List<PointWrapper> points) {
         double result = 0;
         Point2D prev = points.get(points.size() - 1).getPoint();

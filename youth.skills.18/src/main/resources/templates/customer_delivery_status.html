@@ -16,10 +16,15 @@
         </div>
     </form>
     <div style="margin-top: 10px; display: flex;">
-        <div th:text="*{status}">配送中</div>
-        <div style="margin: 0; margin-left: auto;">受け取り予定日時:
-            <span style="font-weight: bold;"
-                  th:text="*{#temporals.format(scheduleDatetime,'MM/dd HH:mm')}">08/07 11:00</span>
+        <div style="display: flex;">
+            <div th:text="*{status}">配送中</div>
+            <div style="margin: 0; margin-left: auto;">受け取り予定日時:
+                <span style="font-weight: bold;"
+                      th:text="*{#temporals.format(scheduleDatetime,'MM/dd HH:mm')}">08/07 11:00</span>
+            </div>
+        </div>
+        <div th:if="*{isInitial} == false" style="margin-left: 10px;">
+            <a th:href="|/customer/delivery/change?deliveryId=*{id}|">変更</a>
         </div>
     </div>
     <div style="margin-top: 10px; flex-grow: 1; overflow: auto;">

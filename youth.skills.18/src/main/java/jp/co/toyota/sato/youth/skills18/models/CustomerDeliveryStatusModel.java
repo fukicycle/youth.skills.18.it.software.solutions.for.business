@@ -8,12 +8,14 @@ public class CustomerDeliveryStatusModel {
     private String id;
     private String status;
     private LocalDateTime scheduleDatetime;
+    private boolean isInitial = true;
 
-    public CustomerDeliveryStatusModel(List<CustomerDeliveryStatusView> items, String id, String status, LocalDateTime scheduleDatetime) {
+    public CustomerDeliveryStatusModel(List<CustomerDeliveryStatusView> items, String id, String status, LocalDateTime scheduleDatetime,boolean isInitial) {
         this.items = items;
         this.id = id;
         this.status = status;
         this.scheduleDatetime = scheduleDatetime;
+        this.isInitial = isInitial;
     }
 
     public CustomerDeliveryStatusModel() {
@@ -49,5 +51,13 @@ public class CustomerDeliveryStatusModel {
 
     public void setScheduleDatetime(LocalDateTime scheduleDatetime) {
         this.scheduleDatetime = scheduleDatetime;
+    }
+
+    public boolean isInitial() {
+        return isInitial;
+    }
+
+    public void setInitial(boolean initial) {
+        isInitial = initial;
     }
 }
