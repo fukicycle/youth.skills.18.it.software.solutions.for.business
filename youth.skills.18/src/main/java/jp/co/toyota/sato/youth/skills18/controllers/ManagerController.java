@@ -1,5 +1,6 @@
 package jp.co.toyota.sato.youth.skills18.controllers;
 
+import jakarta.annotation.Nullable;
 import jp.co.toyota.sato.youth.skills18.TwoOpt;
 import jp.co.toyota.sato.youth.skills18.entities.*;
 import jp.co.toyota.sato.youth.skills18.models.*;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -319,5 +321,69 @@ public class ManagerController {
 
         //前提として時速60Km/hなので1km=1minが成立するため単純にdistanceを60で割ると時間に直すことができる。
         return Math.round(dist / 60 * 360);
+    }
+
+
+    @RequestMapping("/analyze")
+    public String getAnalyze(Model model, @Nullable String yearMonth) {
+        int year = 0;
+        int month = 0;
+        if (yearMonth == null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+            yearMonth = formatter.format(LocalDate.now());
+        }
+        year = Integer.parseInt(yearMonth.split("-")[0]);
+        month = Integer.parseInt(yearMonth.split("-")[1]);
+        List<Office> offices = officeRepository.findAll().stream().filter(a -> a.getParentOfficeId() != null).toList();
+        List<OfficeEarnView> views = new ArrayList<>();
+        List<Delivery> deliveries = deliveryRepository.findAll();
+        List<Zipcode> zipcodes = zipcodeRepository.findAll();
+        for (Office office : offices) {
+            double result = 0;
+            List<Employee> employees = employeeRepository.findAllByOfficeIdAndIsAdminIsFalse(office.getId());
+            for (Employee employee : employees) {
+                int finalYear = year;
+                int finalMonth = month;
+                List<DeliverySchedule> deliverySchedules = deliveryScheduleRepository.findAllByEmployeeIdAndActualDateIsNotNull(employee.getId()).stream().filter(a -> a.getActualDate().getYear() == finalYear && a.getActualDate().getMonthValue() == finalMonth).toList();
+                for (DeliverySchedule deliverySchedule : deliverySchedules) {
+                    var earn = deliveryScheduleDetailRepository.findAllByDeliveryScheduleId(deliverySchedule.getId()).size() * 1200.0;
+                    result += earn;
+                    var deliveryScheduleDetails = deliveryScheduleDetailRepository.findAllByDeliveryScheduleId(deliverySchedule.getId()).stream().sorted(Comparator.comparing(DeliveryScheduleDetail::getDeliveryOrder)).toList();
+                    List<PointWrapper> points = new ArrayList<>();
+                    deliveryScheduleDetails.forEach(deliveryScheduleDetail -> {
+                        Delivery delivery = deliveries.stream().filter(a -> a.getId().equals(deliveryScheduleDetail.getDeliveryId())).findFirst().orElseThrow();
+                        Zipcode zipcode = zipcodes.stream().filter(a -> a.getZipcode().equals(delivery.getDestinationZipcode())).findFirst().orElseThrow();
+                        points.add(new PointWrapper(new Point(zipcode.getxLocation(), zipcode.getyLocation()), delivery));
+                    });
+                    double cost = TwoOpt.getRouteLength(points) / 10 * 150;
+                    result -= cost;
+                }
+            }
+            double cost = 0;
+            if (result < 0) {
+                cost = result;
+                result = 0;
+            }
+            //for debug
+            if(result == 0){
+                cost = new Random().nextDouble() * -100;
+            }
+            views.add(new OfficeEarnView(office.getId(), office.getName(), office.getOfficeTypeId(), office.getZipcode(), office.getxLocation(), office.getyLocation(), office.getMaxAmount(), office.getParentOfficeId(), result, cost));
+        }
+        OfficeEarnView view = views.stream().max(Comparator.comparing(OfficeEarnView::getEarn)).orElseThrow();
+        double maxValue = view.getEarn();
+        view = views.stream().min(Comparator.comparing(OfficeEarnView::getCost)).orElseThrow();
+        double minValue = view.getCost();
+        views.forEach(officeEarnView -> {
+            double earn = officeEarnView.getEarn();
+            earn = earn / maxValue * 50;
+            officeEarnView.setEarn(earn);
+            double cost = officeEarnView.getCost();
+            cost = cost / minValue * 50;
+            officeEarnView.setCost(-cost);
+        });
+
+        model.addAttribute("viewModel", new ManagerAnalyzeModel(views, yearMonth));
+        return "manager_analyze";
     }
 }

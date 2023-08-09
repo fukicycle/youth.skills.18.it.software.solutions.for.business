@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org/">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/app.css">
+    <title>営業所分析</title>
+</head>
+<body style="align-items: center;display: flex;" th:object="${viewModel}">
+<div style="margin: auto; max-width: 1300px; overflow-x: auto;">
+    <h1>営業所分析画面</h1>
+    <form method="post" style="margin-bottom: 10px;">
+        <input type="month" th:value="*{yearMonth}" name="yearMonth">
+        <input type="submit" value="適用">
+    </form>
+    <div style="display: flex;">
+        <div th:each="office : *{offices}">
+            <div th:each="i : ${#numbers.sequence(49,office.earn,-1)}"
+                 style="border: solid 1px #bbb; height: 7px; width: 50px;"></div>
+            <div th:each="i : ${#numbers.sequence(office.earn,1,-1)}"
+                 style="height: 7px; width: 50px; background-color: blue;"></div>
+            <div style="border: solid 1px black; width:60px;"></div>
+            <div th:each="i : ${#numbers.sequence(-1 ,office.cost,-1)}"
+                 style="height: 7px; width: 50px; background-color: red;"></div>
+            <div th:each="i : ${#numbers.sequence(office.cost,-49,-1)}"
+                 style="border: solid 1px #bbb; height: 7px; width: 50px;"></div>
+            <div th:text="${office.name}"></div>
+        </div>
+    </div>
+</div>
+</body>
+<style>
+    input {
+        padding: .5rem;
+    }
+</style>
+</html>
